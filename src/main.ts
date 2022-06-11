@@ -1,9 +1,6 @@
-import {Face, Vertex} from './Model.js';
 import process from './ObjectParser.js'
+import {Vec2} from './math/Vec2.js'
 
-let f1 = new Face(1, 2, 3);
-
-console.log(f1.v_idx_arr);
 let canvas : HTMLCanvasElement = document.querySelector("#view");
 let ctx = canvas.getContext('2d');
 let img_data : ImageData;
@@ -171,11 +168,14 @@ draw_line4(0, 500, 300, 0, black);
 draw_line4(218.443, 220.908, 214.421, 208.30225, black);
 paint_canvas();
 //clear_canvas();
-
-let {faces, vertices} = process();
-
-console.log(faces[0].v_idx_arr);
-
+let model = await process('../res/head.js');
+let faces, vertices;
+if (model) {
+    faces = model.faces;
+    vertices = model.vertices;
+}else {
+    throw new Error("what's up");
+}
 for(let f in faces) {
     let face = faces[f];
     for (let i = 0; i < 3; i++) {
