@@ -20,6 +20,25 @@ class Vec2 {
         return new Vec2(new_data[0], new_data[1]);
 
     }
+
+    add(v2: Vec2) {
+        let new_data : number[] = this.data.map((val, idx)=> val + v2.data[idx]);
+
+        return new Vec2(new_data[0], new_data[1]);        
+    }
+
+    div(val: number) {
+        let new_data = this.data.map((v)=> v / val);
+
+        return new Vec2(new_data[0], new_data[1]);
+    }
+
+    mul(val: number) {
+        let new_data = this.data.map((v)=> v * val);
+
+        return new Vec2(new_data[0], new_data[1]);
+    }
+
     cross(v2: Vec2) {
         let n: number[] = new Array(2);
         return n;

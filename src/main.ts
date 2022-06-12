@@ -7,13 +7,13 @@ let canvas : HTMLCanvasElement = document.querySelector("#view");
 let ctx = canvas.getContext('2d');
 let img_data : ImageData;
 let clear_canvas = () => {    
-    ctx.fillStyle = 'rgba(200,200,200,255)';
+    ctx.fillStyle = 'rgba(0,0,0,255)';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     img_data = ctx.getImageData(0, 0, canvas.width, canvas.height);    
 }
 
-canvas.width = 500;
-canvas.height = 500;
+canvas.width = 800;
+canvas.height = 800;
 clear_canvas();
 img_data = ctx.getImageData(0, 0, canvas.width, canvas.height);    
 let paint_canvas = () => {
@@ -219,6 +219,13 @@ let fill_triangle = (v1: Vec2, v2: Vec2, v3: Vec2, color: Color) => {
     if(v1.data[1] == v2.data[1] && v1.data[1] == v3.data[1]) {
         return;
     }
+
+    let vc = v1.add(v2.add(v3)).div(3);
+
+    v1 = vc.add(v1.sub(vc).mul(1.01));
+    v2 = vc.add(v2.sub(vc).mul(1.01));
+    v3 = vc.add(v3.sub(vc).mul(1.01));
+
     let vs = [v1, v2, v3];
     vs.sort((a,b)=> a.data[1] < b.data[1] ? -1 : 1);
     //vs.map(console.log);
@@ -305,13 +312,14 @@ let get_barycentric = (p: Vec2, a: Vec2, b: Vec2, c: Vec2): Vec3 => {
 
     let n = v1.cross(v2);
 
+    // degenerated triangle
     if (Math.abs(n.z()) < 1) {
         return new Vec3(-1, 1, 1);
     }
     
-    let b_coord = n;
+    let b_coord = n.div(n.z());
 
-    b_coord = new Vec3(1 - (b_coord.x() + b_coord.y()) / b_coord.z(), b_coord.x() / b_coord.z(), b_coord.y() / b_coord.z());
+    b_coord = new Vec3(1.0 - (b_coord.x() + b_coord.y()), b_coord.x(), b_coord.y());
     return b_coord;
 }
 
@@ -320,7 +328,7 @@ let is_inside = (p: Vec2, a: Vec2, b: Vec2, c: Vec2): boolean => {
 
     let data = b_coord.data;
 
-    let failed = data.some(v=> v < -0.03);
+    let failed = data.some(v=> v < - 0.05);
 
     return !failed;
 }
@@ -331,7 +339,14 @@ let fill_triangle2 = (p1: Vec2, p2: Vec2, p3: Vec2, color: Color) => {
     let min_x = bbox.min.x();
     let min_y = bbox.min.y();
     let max_x = bbox.max.x();
-    let max_y = bbox.max.y();
+    let max_y = bbox.max.y();    
+
+    /* let pc = p1.add(p2.add(p3)).div(3);
+    
+    p1 = pc.add(p1.sub(pc).mul(1.3));
+    p2 = pc.add(p2.sub(pc).mul(1.3));
+    p3 = pc.add(p3.sub(pc).mul(1.3)); */
+    
     /* 
     draw_line4(min_x, min_y, min_x, max_y, red);
     draw_line4(min_x, max_y, max_x, max_y, red);
