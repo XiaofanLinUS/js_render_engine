@@ -1,5 +1,5 @@
 import process from './ObjectParser.js'
-import {Vec2, Vec3} from './math/Vec2.js'
+import {Vec2, Vec3} from './math/Vec.js'
 import { parseCommandLine } from '../node_modules/typescript/lib/typescript.js';
 
 let canvas : HTMLCanvasElement = document.querySelector("#view");
@@ -353,4 +353,30 @@ fill_triangle2(new Vec2(150, 0), new Vec2(30, 400), new Vec2(0, 400), black);
 
 console.log((new Vec2(1, 1)).sub(new Vec2(-1, -1)));
 console.log((new Vec3(1, 1, 1).div(2)));
+paint_canvas();
+clear_canvas();
+let model = await process('../res/head.js');
+
+let faces, vertices;
+if (model) {
+    faces = model.faces;
+    vertices = model.vertices;
+}else {
+    throw new Error("what's up");
+}
+for(let f in faces) {
+    let face = faces[f];
+    let v1 = new Vec2((1+vertices[face.v_idx_arr[0]].data.x())*canvas.width/2, (1+vertices[face.v_idx_arr[0]].data.y())*canvas.height/2);
+    let v2 = new Vec2((1+vertices[face.v_idx_arr[1]].data.x())*canvas.width/2, (1+vertices[face.v_idx_arr[1]].data.y())*canvas.height/2);
+    let v3 = new Vec2((1+vertices[face.v_idx_arr[2]].data.x())*canvas.width/2, (1+vertices[face.v_idx_arr[2]].data.y())*canvas.height/2);
+    console.log(v1);
+    fill_triangle2(v1, v2, v3,
+        {
+            r: 256 * Math.random(),
+            g: 256 * Math.random(),
+            b: 256 * Math.random(),
+            a: 255
+        }
+        );
+}
 paint_canvas();

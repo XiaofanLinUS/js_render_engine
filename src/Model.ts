@@ -1,3 +1,5 @@
+import {Vec3} from './math/Vec.js'
+
 class Face {
     v_idx_arr : number[]
 
@@ -11,14 +13,10 @@ class Face {
 
 
 class Vertex {
-    x : number
-    y : number
-    z : number
+    data: Vec3
 
     constructor(x: number, y: number, z: number) {
-        this.x = x;
-        this.y = y;
-        this.z = z;
+        this.data = new Vec3(x, y, z);
     }
 }
 

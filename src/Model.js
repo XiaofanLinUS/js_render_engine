@@ -1,3 +1,4 @@
+import { Vec3 } from './math/Vec.js';
 class Face {
     v_idx_arr;
     constructor(v1, v2, v3) {
@@ -8,13 +9,9 @@ class Face {
     }
 }
 class Vertex {
-    x;
-    y;
-    z;
+    data;
     constructor(x, y, z) {
-        this.x = x;
-        this.y = y;
-        this.z = z;
+        this.data = new Vec3(x, y, z);
     }
 }
 export { Face, Vertex };
