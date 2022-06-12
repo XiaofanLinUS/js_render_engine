@@ -319,7 +319,7 @@ let is_inside = (p: Vec2, a: Vec2, b: Vec2, c: Vec2): boolean => {
 
     let data = b_coord.data;
 
-    let failed = data.some(v=> v < 0);
+    let failed = data.some(v=> v < -0.03);
 
     return !failed;
 }

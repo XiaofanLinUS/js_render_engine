@@ -240,7 +240,7 @@ let get_barycentric = (p, a, b, c) => {
 let is_inside = (p, a, b, c) => {
     let b_coord = get_barycentric(p, a, b, c);
     let data = b_coord.data;
-    let failed = data.some(v => v < 0);
+    let failed = data.some(v => v < -0.03);
     return !failed;
 };
 let fill_triangle2 = (p1, p2, p3, color) => {
