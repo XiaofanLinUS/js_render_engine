@@ -1,6 +1,6 @@
 import { Face, Vertex } from "./Model.js";
 
-let process = async (file_name) => {
+let process = async (file_name: string) => {
     try {
         let data = (await import(file_name)).default;    
         let lines = data.split('\n');
@@ -21,7 +21,7 @@ let process = async (file_name) => {
                 let v2 = Number(info_arr[2].split('/')[0]) - 1;
                 let v3 = Number(info_arr[3].split('/')[0]) - 1;
 
-                let face = new Face(v1, v2, v3);
+                let face = new Face(v1, v2, v3, vertices);
                 faces.push(face);
                 
             }        

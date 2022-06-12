@@ -15,7 +15,7 @@ let process = async (file_name) => {
                 let v1 = Number(info_arr[1].split('/')[0]) - 1;
                 let v2 = Number(info_arr[2].split('/')[0]) - 1;
                 let v3 = Number(info_arr[3].split('/')[0]) - 1;
-                let face = new Face(v1, v2, v3);
+                let face = new Face(v1, v2, v3, vertices);
                 faces.push(face);
             }
         }

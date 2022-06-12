@@ -233,8 +233,8 @@ let get_barycentric = (p, a, b, c) => {
     if (Math.abs(n.z()) < 1) {
         return new Vec3(-1, 1, 1);
     }
-    let b_coord = n.div(n.z());
-    b_coord = new Vec3(1 - b_coord.x() - b_coord.y(), b_coord.x(), b_coord.y());
+    let b_coord = n;
+    b_coord = new Vec3(1 - (b_coord.x() + b_coord.y()) / b_coord.z(), b_coord.x() / b_coord.z(), b_coord.y() / b_coord.z());
     return b_coord;
 };
 let is_inside = (p, a, b, c) => {
@@ -279,16 +279,30 @@ else {
     throw new Error("what's up");
 }
 for (let f in faces) {
+    let light_dir = new Vec3(0, 0, -1);
     let face = faces[f];
+    let w1, w2, w3;
+    let intensity;
+    let w_coord;
     let v1 = new Vec2((1 + vertices[face.v_idx_arr[0]].data.x()) * canvas.width / 2, (1 + vertices[face.v_idx_arr[0]].data.y()) * canvas.height / 2);
     let v2 = new Vec2((1 + vertices[face.v_idx_arr[1]].data.x()) * canvas.width / 2, (1 + vertices[face.v_idx_arr[1]].data.y()) * canvas.height / 2);
     let v3 = new Vec2((1 + vertices[face.v_idx_arr[2]].data.x()) * canvas.width / 2, (1 + vertices[face.v_idx_arr[2]].data.y()) * canvas.height / 2);
-    console.log(v1);
-    fill_triangle2(v1, v2, v3, {
-        r: 256 * Math.random(),
-        g: 256 * Math.random(),
-        b: 256 * Math.random(),
-        a: 255
-    });
+    w1 = Vec3.from_vertex(face.get_vertex(0));
+    w2 = Vec3.from_vertex(face.get_vertex(1));
+    w3 = Vec3.from_vertex(face.get_vertex(2));
+    w_coord = (w3.sub(w1)).cross(w2.sub(w1));
+    w_coord.normalize();
+    intensity = w_coord.dot(light_dir);
+    if (intensity > 0) {
+        console.log(intensity);
+        fill_triangle2(v1, v2, v3, {
+            r: 255 * intensity,
+            g: 255 * intensity,
+            b: 255 * intensity,
+            a: 255
+        });
+    }
 }
+console.log((new Vec3(0, 0, 0)).sub(new Vec3(1, 1, 1)).norm());
+console.log(Math.sqrt(3));
 paint_canvas();
