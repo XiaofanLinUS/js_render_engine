@@ -43,6 +43,10 @@ class Vec2 {
         let n: number[] = new Array(2);
         return n;
     }
+
+    static from_vec3(v: Vec3): Vec2 {
+        return new Vec2(v.x(), v.y());
+    }
 }
 
 class Vec3 {

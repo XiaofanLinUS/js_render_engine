@@ -8,8 +8,8 @@ let clear_canvas = () => {
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     img_data = ctx.getImageData(0, 0, canvas.width, canvas.height);
 };
-canvas.width = 800;
-canvas.height = 800;
+canvas.width = 500;
+canvas.height = 500;
 clear_canvas();
 img_data = ctx.getImageData(0, 0, canvas.width, canvas.height);
 let paint_canvas = () => {
@@ -46,6 +46,9 @@ let draw_dot = (x, y, c) => {
     }
     x = Math.floor(x);
     y = Math.floor(y);
+    if (x == 311 && y == 440) {
+        console.log("true");
+    }
     y = canvas.height - y - 1;
     let idx = (x + y * canvas.width) * 4;
     //ctx.fillStyle = color;
@@ -242,6 +245,21 @@ let get_barycentric = (p, a, b, c) => {
     b_coord = new Vec3(1.0 - (b_coord.x() + b_coord.y()), b_coord.x(), b_coord.y());
     return b_coord;
 };
+let get_barycentric_v3 = (p, a, b, c) => {
+    let ab = b.sub(a);
+    let ac = c.sub(a);
+    let pa = a.sub(p);
+    let s1 = new Vec3(ab.x(), ac.x(), pa.x());
+    let s2 = new Vec3(ab.y(), ac.y(), pa.y());
+    let u = s1.cross(s2);
+    //console.log(u.data);
+    if (Math.abs(u.z()) < 1) {
+        return new Vec3(-1, 1, 1);
+    }
+    let b_coord = u.div(u.z());
+    b_coord = new Vec3(1.0 - (b_coord.x() + b_coord.y()), b_coord.x(), b_coord.y());
+    return b_coord;
+};
 let is_inside = (p, a, b, c) => {
     let b_coord = get_barycentric(p, a, b, c);
     let data = b_coord.data;
@@ -288,31 +306,111 @@ if (model) {
 else {
     throw new Error("what's up");
 }
-for (let f in faces) {
-    let light_dir = new Vec3(0, 0, -1);
+/*
+for(let f in faces) {
+    let light_dir = new Vec3(0, 0,-1);
     let face = faces[f];
-    let w1, w2, w3;
-    let intensity;
-    let w_coord;
-    let v1 = new Vec2((1 + vertices[face.v_idx_arr[0]].data.x()) * canvas.width / 2, (1 + vertices[face.v_idx_arr[0]].data.y()) * canvas.height / 2);
-    let v2 = new Vec2((1 + vertices[face.v_idx_arr[1]].data.x()) * canvas.width / 2, (1 + vertices[face.v_idx_arr[1]].data.y()) * canvas.height / 2);
-    let v3 = new Vec2((1 + vertices[face.v_idx_arr[2]].data.x()) * canvas.width / 2, (1 + vertices[face.v_idx_arr[2]].data.y()) * canvas.height / 2);
+    let w1, w2, w3: Vec3;
+    let intensity: number;
+    let w_coord: Vec3;
+    let v1 = new Vec2((1+vertices[face.v_idx_arr[0]].data.x())*canvas.width/2, (1+vertices[face.v_idx_arr[0]].data.y())*canvas.height/2);
+    let v2 = new Vec2((1+vertices[face.v_idx_arr[1]].data.x())*canvas.width/2, (1+vertices[face.v_idx_arr[1]].data.y())*canvas.height/2);
+    let v3 = new Vec2((1+vertices[face.v_idx_arr[2]].data.x())*canvas.width/2, (1+vertices[face.v_idx_arr[2]].data.y())*canvas.height/2);
+    
     w1 = Vec3.from_vertex(face.get_vertex(0));
     w2 = Vec3.from_vertex(face.get_vertex(1));
     w3 = Vec3.from_vertex(face.get_vertex(2));
     w_coord = (w3.sub(w1)).cross(w2.sub(w1));
+    
     w_coord.normalize();
+    
     intensity = w_coord.dot(light_dir);
-    if (intensity > 0) {
+    
+    if(intensity > 0) {
         console.log(intensity);
-        fill_triangle2(v1, v2, v3, {
+        let color =  {
             r: 255 * intensity,
             g: 255 * intensity,
             b: 255 * intensity,
             a: 255
-        });
+        };
+        fill_triangle2(v1, v2, v3, color);
+        draw_triangle(v1, v2, v3, color);
+    }
+} */
+clear_canvas();
+let fill_triangle_vec3 = (p1, p2, p3, color, z_buff) => {
+    let bbox = find_bbox(Vec2.from_vec3(p1), Vec2.from_vec3(p2), Vec2.from_vec3(p3));
+    let bb_min = bbox.min;
+    let bb_max = bbox.max;
+    let min_x = bbox.min.x();
+    let min_y = bbox.min.y();
+    let max_x = bbox.max.x();
+    let max_y = bbox.max.y();
+    /* draw_line4(min_x, min_y, min_x, max_y, red);
+    draw_line4(min_x, max_y, max_x, max_y, red);
+    draw_line4(min_x, min_y, max_x, min_y, red);
+    draw_line4(max_x, max_y, max_x, min_y, red);
+ */
+    for (let x = bb_min.x(); x <= bb_max.x(); x++) {
+        for (let y = bb_min.y(); y <= bb_max.y(); y++) {
+            let p = new Vec3(x, y, 0);
+            let bary = get_barycentric_v3(p, p1, p2, p3);
+            let outside = bary.data.some(v => v < -0.0);
+            let z = p1.z() * bary.x() + p2.z() * bary.y() + p3.z() * bary.z();
+            z *= 100;
+            //console.log(z);
+            if (outside)
+                continue;
+            if (Math.floor(x) == 311 && Math.floor(y) == (499 - 440)) {
+                console.log("Hit");
+            }
+            let idx = Math.floor(x) + Math.floor(y) * canvas.width;
+            //console.log(idx == (311 + (499 - 440) * canvas.width));
+            if (idx == (311 + (499 - 440) * canvas.width)) {
+                console.log(z);
+            }
+            if (z > z_buff[idx]) {
+                z_buff[idx] = z;
+                //console.log(idx);
+                draw_dot(x, y, color);
+            }
+        }
+    }
+};
+console.profile("Model");
+let z_buff = (new Array(canvas.height * canvas.width)).fill(-10000);
+// z buffer used to perform z-test
+fill_triangle_vec3(new Vec3(0, 250, -2), new Vec3(100, 499, 1), new Vec3(100, 0, 1), red, z_buff);
+fill_triangle_vec3(new Vec3(20, 499, 3), new Vec3(20, 0, 3), new Vec3(150, 250, -3), blue, z_buff);
+for (let f in faces) {
+    let light_dir = new Vec3(0, 0, -1);
+    let face = faces[f];
+    let w1, w2, w3;
+    let s1, s2, s3;
+    let intensity;
+    let normal;
+    // w1, w2, w3 is world coordinates of vertices of faces[f]    
+    w1 = Vec3.from_vertex(face.get_vertex(0));
+    w2 = Vec3.from_vertex(face.get_vertex(1));
+    w3 = Vec3.from_vertex(face.get_vertex(2));
+    // s1, s2, s3 is screen coordinates of vertices of faces[f]
+    s1 = new Vec3((1 + w1.x()) * canvas.width / 2, (1 + w1.y()) * canvas.height / 2, w1.z());
+    s2 = new Vec3((1 + w2.x()) * canvas.width / 2, (1 + w2.y()) * canvas.height / 2, w2.z());
+    s3 = new Vec3((1 + w3.x()) * canvas.width / 2, (1 + w3.y()) * canvas.height / 2, w3.z());
+    normal = (w3.sub(w1)).cross(w2.sub(w1));
+    normal.normalize();
+    intensity = normal.dot(light_dir);
+    let color = {
+        r: 255 * Math.random(),
+        g: 255 * Math.random(),
+        b: 255 * Math.random(),
+        a: 255
+    };
+    fill_triangle_vec3(s1, s2, s3, color, z_buff);
+    if (intensity > 0) {
     }
 }
-console.log((new Vec3(0, 0, 0)).sub(new Vec3(1, 1, 1)).norm());
-console.log(Math.sqrt(3));
+console.log(z_buff[311 + (499 - 440) * canvas.width]);
+console.profileEnd("Model");
 paint_canvas();
