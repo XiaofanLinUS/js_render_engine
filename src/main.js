@@ -46,9 +46,6 @@ let draw_dot = (x, y, c) => {
     }
     x = Math.floor(x);
     y = Math.floor(y);
-    if (x == 311 && y == 440) {
-        console.log("true");
-    }
     y = canvas.height - y - 1;
     let idx = (x + y * canvas.width) * 4;
     //ctx.fillStyle = color;
@@ -256,8 +253,7 @@ let get_barycentric_v3 = (p, a, b, c) => {
     if (Math.abs(u.z()) < 1) {
         return new Vec3(-1, 1, 1);
     }
-    let b_coord = u.div(u.z());
-    b_coord = new Vec3(1.0 - (b_coord.x() + b_coord.y()), b_coord.x(), b_coord.y());
+    let b_coord = new Vec3(1.0 - (u.x() + u.y()) / u.z(), u.x() / u.z(), u.y() / u.z());
     return b_coord;
 };
 let is_inside = (p, a, b, c) => {
@@ -343,22 +339,12 @@ let fill_triangle_vec3 = (p1, p2, p3, color, z_buff) => {
     let bbox = find_bbox(Vec2.from_vec3(p1), Vec2.from_vec3(p2), Vec2.from_vec3(p3));
     let bb_min = bbox.min;
     let bb_max = bbox.max;
-    let min_x = bbox.min.x();
-    let min_y = bbox.min.y();
-    let max_x = bbox.max.x();
-    let max_y = bbox.max.y();
-    /* draw_line4(min_x, min_y, min_x, max_y, red);
-    draw_line4(min_x, max_y, max_x, max_y, red);
-    draw_line4(min_x, min_y, max_x, min_y, red);
-    draw_line4(max_x, max_y, max_x, min_y, red);
- */
-    for (let x = bb_min.x(); x <= bb_max.x(); x++) {
-        for (let y = bb_min.y(); y <= bb_max.y(); y++) {
+    for (let x = Math.floor(bb_min.x()); x <= Math.floor(bb_max.x()); x++) {
+        for (let y = Math.floor(bb_min.y()); y <= Math.floor(bb_max.y()); y++) {
             let p = new Vec3(x, y, 0);
             let bary = get_barycentric_v3(p, p1, p2, p3);
-            let outside = bary.data.some(v => v < -0.0);
+            let outside = bary.data.some(v => v < -0.01);
             let z = p1.z() * bary.x() + p2.z() * bary.y() + p3.z() * bary.z();
-            z *= 100;
             //console.log(z);
             if (outside)
                 continue;
@@ -366,6 +352,7 @@ let fill_triangle_vec3 = (p1, p2, p3, color, z_buff) => {
                 console.log("Hit");
             }
             let idx = Math.floor(x) + Math.floor(y) * canvas.width;
+            //console.log(`${idx}, ${Math.floor(x + y * canvas.width)}`);
             //console.log(idx == (311 + (499 - 440) * canvas.width));
             if (idx == (311 + (499 - 440) * canvas.width)) {
                 console.log(z);
@@ -401,14 +388,14 @@ for (let f in faces) {
     normal = (w3.sub(w1)).cross(w2.sub(w1));
     normal.normalize();
     intensity = normal.dot(light_dir);
-    let color = {
-        r: 255 * Math.random(),
-        g: 255 * Math.random(),
-        b: 255 * Math.random(),
-        a: 255
-    };
-    fill_triangle_vec3(s1, s2, s3, color, z_buff);
     if (intensity > 0) {
+        let color = {
+            r: 255 * Math.random(),
+            g: 255 * Math.random(),
+            b: 255 * Math.random(),
+            a: 255
+        };
+        fill_triangle_vec3(s1, s2, s3, color, z_buff);
     }
 }
 console.log(z_buff[311 + (499 - 440) * canvas.width]);
