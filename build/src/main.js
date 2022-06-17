@@ -1,6 +1,6 @@
 import process from './ObjectParser.js';
 import { load_img } from './ImageLoader.js';
-import { Vec2, Vec3 } from './math/Vec.js';
+import { Vec2, Vec3, Vec4, Mat4 } from './math/Vec.js';
 let canvas = document.querySelector("#view");
 let ctx = canvas.getContext('2d');
 let img_data;
@@ -448,14 +448,66 @@ let fill_triangle_texture = (p1, p2, p3, intensity, z_buff, texture_img, t1, t2,
         }
     }
 };
+/* for(let f in faces) {
+    let light_dir = new Vec3(0, 0,-1);
+    let face = faces[f];
+    let w1, w2, w3: Vec3;
+    let w1_, w2_, w3_: Vec4;
+    let s1, s2, s3: Vec3;
+    let t1, t2, t3: Vec2;
+    let intensity: number;
+    let normal: Vec3;
+    let perspective = new Mat4();
+    let center: number = 4;
+    perspective.data[3][2] = - 1 / center;
+
+    // t1, t2, t3 are texture coordinates of vertices of faces[f]
+    t1 = face.get_t_coord(0);
+    t2 = face.get_t_coord(1);
+    t3 = face.get_t_coord(2);
+    // w1, w2, w3 is world coordinates of vertices of faces[f]
+    w1 = Vec3.from_vertex(face.get_vertex(0));
+    w2 = Vec3.from_vertex(face.get_vertex(1));
+    w3 = Vec3.from_vertex(face.get_vertex(2));
+
+    w1_ = Vec4.from_num_arr(w1.data.concat(1));
+    w2_ = Vec4.from_num_arr(w2.data.concat(1));
+    w3_ = Vec4.from_num_arr(w3.data.concat(1));
+
+    w1_ = perspective.mul_v4(w1_).to_p();
+    w2_ = perspective.mul_v4(w2_).to_p();
+    w3_ = perspective.mul_v4(w3_).to_p();
+
+    
+    // s1, s2, s3 is screen coordinates of vertices of faces[f]
+    s1 = new Vec3((1+w1.x())*canvas.width/2, (1+w1.y())*canvas.height/2, w1.z());
+    s2 = new Vec3((1+w2.x())*canvas.width/2, (1+w2.y())*canvas.height/2, w2.z());
+    s3 = new Vec3((1+w3.x())*canvas.width/2, (1+w3.y())*canvas.height/2, w3.z());
+    
+    
+    normal = (w3.sub(w1)).cross(w2.sub(w1));
+    normal.normalize();
+    
+    intensity = normal.dot(light_dir);
+    
+    
+    if(intensity > 0) {
+        fill_triangle_texture(s1, s2, s3, intensity, z_buff, texture_img, t1, t2, t3);
+    }
+} */
 for (let f in faces) {
     let light_dir = new Vec3(0, 0, -1);
     let face = faces[f];
     let w1, w2, w3;
+    let w1_, w2_, w3_;
     let s1, s2, s3;
     let t1, t2, t3;
     let intensity;
     let normal;
+    let perspective = new Mat4();
+    let view = Mat4.viewport(canvas.width / 4, canvas.height / 4, canvas.width / 2, canvas.height / 2);
+    let center = 1.2;
+    perspective.data[3][2] = -1 / center;
     // t1, t2, t3 are texture coordinates of vertices of faces[f]
     t1 = face.get_t_coord(0);
     t2 = face.get_t_coord(1);
@@ -464,10 +516,16 @@ for (let f in faces) {
     w1 = Vec3.from_vertex(face.get_vertex(0));
     w2 = Vec3.from_vertex(face.get_vertex(1));
     w3 = Vec3.from_vertex(face.get_vertex(2));
+    w1_ = Vec4.from_num_arr(w1.data.concat(1));
+    w2_ = Vec4.from_num_arr(w2.data.concat(1));
+    w3_ = Vec4.from_num_arr(w3.data.concat(1));
+    w1_ = perspective.mul_v4(w1_).to_p();
+    w2_ = perspective.mul_v4(w2_).to_p();
+    w3_ = perspective.mul_v4(w3_).to_p();
     // s1, s2, s3 is screen coordinates of vertices of faces[f]
-    s1 = new Vec3((1 + w1.x()) * canvas.width / 2, (1 + w1.y()) * canvas.height / 2, w1.z());
-    s2 = new Vec3((1 + w2.x()) * canvas.width / 2, (1 + w2.y()) * canvas.height / 2, w2.z());
-    s3 = new Vec3((1 + w3.x()) * canvas.width / 2, (1 + w3.y()) * canvas.height / 2, w3.z());
+    s1 = Vec3.from_num_arr(view.mul_v4(w1_).data);
+    s2 = Vec3.from_num_arr(view.mul_v4(w2_).data);
+    s3 = Vec3.from_num_arr(view.mul_v4(w3_).data);
     normal = (w3.sub(w1)).cross(w2.sub(w1));
     normal.normalize();
     intensity = normal.dot(light_dir);
