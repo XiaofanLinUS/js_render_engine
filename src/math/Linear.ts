@@ -187,7 +187,8 @@ class Mat4 {
     mul(m2: Mat4) {
         let a = this.data;
         let b = m2.data;
-        let c = new Array(4).fill(new Array(4));
+        let c = [[1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 1, 0], [0, 0, 0, 1]];
+
         for(let i = 0; i <= 3; i++) {
             for(let j = 0; j <= 3; j++) {
                 let sum = 0;
@@ -197,6 +198,7 @@ class Mat4 {
                 c[i][j] = sum;
             }
         }
+        
         return Mat4.from_num_mat(c);
     }
 
@@ -224,6 +226,27 @@ class Mat4 {
         mtx.data[2][2] = 255 / 2;
 
         return mtx;
+    }
+
+    static lookat(eye: Vec3, target: Vec3, up: Vec3) {
+        let te = eye.sub(target);
+        let i, j, k: Vec3;
+        te.normalize();
+        k = te;
+        i = up.cross(k);
+        i.normalize();
+        j = k.cross(i);
+
+        let rot = new Mat4();
+        let trans = new Mat4();
+        for(let id = 0; id <= 2; id++) {
+            rot.data[0][id] = i.data[id];
+            rot.data[1][id] = j.data[id];
+            rot.data[2][id] = k.data[id];
+
+            trans.data[id][3] = -eye.data[id];
+        }
+        return rot.mul(trans);
     }
 
 }

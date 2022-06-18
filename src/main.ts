@@ -1,23 +1,26 @@
 import process from './ObjectParser.js'
 import { load_img, Img } from './ImageLoader.js';
-import {Vec2, Vec3, Vec4, Mat4} from './math/Vec.js'
+import { Vec2, Vec3, Vec4, Mat4 } from './math/Linear.js'
+import { Face } from './Model.js';
 
-let canvas : HTMLCanvasElement = document.querySelector("#view");
+let canvas: HTMLCanvasElement = document.querySelector("#view");
 let ctx = canvas.getContext('2d');
-let img_data : ImageData;
-let clear_canvas = () => {    
+let img_data: ImageData;
+let clear_canvas = () => {
+    console.log("clean");
     ctx.fillStyle = 'rgba(0,0,0,255)';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
-    img_data = ctx.getImageData(0, 0, canvas.width, canvas.height);    
+    img_data = ctx.getImageData(0, 0, canvas.width, canvas.height);
 }
 
 canvas.width = 1200;
 canvas.height = 1200;
 clear_canvas();
-img_data = ctx.getImageData(0, 0, canvas.width, canvas.height);    
+img_data = ctx.getImageData(0, 0, canvas.width, canvas.height);
 let paint_canvas = () => {
+    console.log("paint");
     ctx.putImageData(img_data, 0, 0);
-    
+
 }
 
 
@@ -25,31 +28,31 @@ interface Color {
     r: number,
     g: number,
     b: number,
-    a: number    
+    a: number
 };
 
-let red : Color = {
+let red: Color = {
     r: 255,
     g: 0,
     b: 0,
     a: 255
 };
 
-let blue : Color = {
+let blue: Color = {
     r: 0,
     g: 0,
     b: 255,
     a: 255
 };
 
-let green : Color = {
+let green: Color = {
     r: 0,
     g: 255,
     b: 0,
     a: 255
 };
 
-let black : Color = {
+let black: Color = {
     r: 0,
     g: 0,
     b: 0,
@@ -66,14 +69,14 @@ let draw_dot = (x: number, y: number, c: Color) => {
     let idx = (x + y * canvas.width) * 4;
     //ctx.fillStyle = color;
     //ctx.fillRect(x, y, 1, 1);
-    img_data.data[idx]   = c.r;
-    img_data.data[idx+1] = c.g;
-    img_data.data[idx+2] = c.b;
-    img_data.data[idx+3] = c.a;
+    img_data.data[idx] = c.r;
+    img_data.data[idx + 1] = c.g;
+    img_data.data[idx + 2] = c.b;
+    img_data.data[idx + 3] = c.a;
 }
 
-let draw_line1 = (x0: number, y0: number, x1: number, y1:number, color:string) => {
-    for(let t = 0; t <= 1; t += 0.01) {
+let draw_line1 = (x0: number, y0: number, x1: number, y1: number, color: string) => {
+    for (let t = 0; t <= 1; t += 0.01) {
         let x = x0 + (x1 - x0) * t;
         let y = y0 + (y1 - y0) * t;
         ctx.fillStyle = color;
@@ -81,32 +84,32 @@ let draw_line1 = (x0: number, y0: number, x1: number, y1:number, color:string) =
     }
 }
 
-let draw_line2 = (x0: number, y0: number, x1: number, y1:number, color: Color) => {
-    for(let x = x0; x <= x1; x++) {
+let draw_line2 = (x0: number, y0: number, x1: number, y1: number, color: Color) => {
+    for (let x = x0; x <= x1; x++) {
         let t = (x - x0) / (x1 - x0);
         let y = y0 + (y1 - y0) * t;
         draw_dot(x, y, color);
     }
-    
+
 }
 
-let draw_line3 = (x0: number, y0: number, x1: number, y1: number, color: Color) : void => {
+let draw_line3 = (x0: number, y0: number, x1: number, y1: number, color: Color): void => {
     let transpose = false;
-    if(Math.abs(x1 - x0) < Math.abs(y1 - y0)) {
+    if (Math.abs(x1 - x0) < Math.abs(y1 - y0)) {
         transpose = true;
         [x0, y0, x1, y1] = [y0, x0, y1, x1];
     }
 
-    if(x1 < x0) {
+    if (x1 < x0) {
         [x0, y0, x1, y1] = [x1, y1, x0, y0];
     }
-    
-    for(let x = x0; x <= x1; x++) {
+
+    for (let x = x0; x <= x1; x++) {
         let t = (x - x0) / (x1 - x0);
         let y = Math.floor(y0 + (y1 - y0) * t);
-        if(transpose) {
+        if (transpose) {
             draw_dot(y, x, color);
-        }else {
+        } else {
             draw_dot(x, y, color);
         }
     }
@@ -114,29 +117,29 @@ let draw_line3 = (x0: number, y0: number, x1: number, y1: number, color: Color) 
 
 
 
-let draw_line4 = (x0: number, y0: number, x1: number, y1: number, color: Color) : void => {
-    let transpose : boolean = false;
+let draw_line4 = (x0: number, y0: number, x1: number, y1: number, color: Color): void => {
+    let transpose: boolean = false;
 
     [x0, y0, x1, y1] = [x0, y0, x1, y1].map(Math.floor);
-    if(Math.abs(x1 - x0) < Math.abs(y1 - y0)) {
+    if (Math.abs(x1 - x0) < Math.abs(y1 - y0)) {
         transpose = true;
         [x0, y0] = [y0, x0];
         [x1, y1] = [y1, x1];
     }
 
-    if(x1 < x0) {
+    if (x1 < x0) {
         [x0, x1] = [x1, x0];
         [y0, y1] = [y1, y0];
     }
 
     let derror = Math.abs((y1 - y0) / (x1 - x0));
-    let error  = 0;
+    let error = 0;
     let y = y0;
-    for(let x = x0; x <= x1; x++) {
+    for (let x = x0; x <= x1; x++) {
 
-        if(transpose) {
+        if (transpose) {
             draw_dot(y, x, color);
-        }else {
+        } else {
             draw_dot(x, y, color);
         }
         error += derror;
@@ -215,7 +218,7 @@ let v3 = new Vec2(100, 300);
 //draw_triangle(v1, v2, v3, red);
 
 let fill_triangle = (v1: Vec2, v2: Vec2, v3: Vec2, color: Color) => {
-    if(v1.data[1] == v2.data[1] && v1.data[1] == v3.data[1]) {
+    if (v1.data[1] == v2.data[1] && v1.data[1] == v3.data[1]) {
         return;
     }
 
@@ -226,10 +229,10 @@ let fill_triangle = (v1: Vec2, v2: Vec2, v3: Vec2, color: Color) => {
     v3 = vc.add(v3.sub(vc).mul(1.01));
 
     let vs = [v1, v2, v3];
-    vs.sort((a,b)=> a.data[1] < b.data[1] ? -1 : 1);
+    vs.sort((a, b) => a.data[1] < b.data[1] ? -1 : 1);
     //vs.map(console.log);
-    for(let y = vs[0].data[1]; y <= vs[2].data[1]; y++) {
-        let x_l : number, x_r : number;
+    for (let y = vs[0].data[1]; y <= vs[2].data[1]; y++) {
+        let x_l: number, x_r: number;
         let x1 = vs[0].data[0];
         let x2 = vs[1].data[0];
         let x3 = vs[2].data[0];
@@ -241,8 +244,8 @@ let fill_triangle = (v1: Vec2, v2: Vec2, v3: Vec2, color: Color) => {
         x_r = (x3 - x1) / (y3 - y1) * delta_y + x1;
         if (y <= y2 && y1 != y2) {
             // y2 == y3
-            x_l = (x2 - x1) / (y2 - y1) * delta_y + x1            
-        }else {
+            x_l = (x2 - x1) / (y2 - y1) * delta_y + x1
+        } else {
             delta_y = y - y2;
             x_l = (x3 - x2) / (y3 - y2) * delta_y + x2;
         }
@@ -251,7 +254,7 @@ let fill_triangle = (v1: Vec2, v2: Vec2, v3: Vec2, color: Color) => {
             [x_l, x_r] = [x_r, x_l];
         }
 
-        for(let x = x_l; x <= x_r; x++) {
+        for (let x = x_l; x <= x_r; x++) {
             draw_dot(x, y, color);
             draw_dot(x, y, color);
         }
@@ -291,14 +294,14 @@ interface Bbox {
     min: Vec2,
     max: Vec2
 }
-let find_bbox = (p1: Vec2, p2: Vec2, p3: Vec2) : Bbox => {
-    let min_x = [p1, p2, p3].reduce((p, c)=> p.data[0] < c.data[0] ? p : c).data[0];
-    let min_y = [p1, p2, p3].reduce((p, c)=> p.data[1] < c.data[1] ? p : c).data[1];
+let find_bbox = (p1: Vec2, p2: Vec2, p3: Vec2): Bbox => {
+    let min_x = [p1, p2, p3].reduce((p, c) => p.data[0] < c.data[0] ? p : c).data[0];
+    let min_y = [p1, p2, p3].reduce((p, c) => p.data[1] < c.data[1] ? p : c).data[1];
 
-    let max_x = [p1, p2, p3].reduce((p, c)=> p.data[0] > c.data[0] ? p : c).data[0];
-    let max_y = [p1, p2, p3].reduce((p, c)=> p.data[1] > c.data[1] ? p : c).data[1];
+    let max_x = [p1, p2, p3].reduce((p, c) => p.data[0] > c.data[0] ? p : c).data[0];
+    let max_y = [p1, p2, p3].reduce((p, c) => p.data[1] > c.data[1] ? p : c).data[1];
 
-    return {min: new Vec2(min_x, min_y), max: new Vec2(max_x, max_y)};
+    return { min: new Vec2(min_x, min_y), max: new Vec2(max_x, max_y) };
 }
 
 let get_barycentric = (p: Vec2, a: Vec2, b: Vec2, c: Vec2): Vec3 => {
@@ -315,7 +318,7 @@ let get_barycentric = (p: Vec2, a: Vec2, b: Vec2, c: Vec2): Vec3 => {
     if (Math.abs(n.z()) < 1) {
         return new Vec3(-1, 1, 1);
     }
-    
+
     let b_coord = n.div(n.z());
 
     b_coord = new Vec3(1.0 - (b_coord.x() + b_coord.y()), b_coord.x(), b_coord.y());
@@ -353,7 +356,7 @@ let is_inside = (p: Vec2, a: Vec2, b: Vec2, c: Vec2): boolean => {
 
     let data = b_coord.data;
 
-    let failed = data.some(v=> v < - 0.05);
+    let failed = data.some(v => v < - 0.05);
 
     return !failed;
 }
@@ -364,24 +367,24 @@ let fill_triangle2 = (p1: Vec2, p2: Vec2, p3: Vec2, color: Color) => {
     let min_x = bbox.min.x();
     let min_y = bbox.min.y();
     let max_x = bbox.max.x();
-    let max_y = bbox.max.y();    
+    let max_y = bbox.max.y();
 
     /* let pc = p1.add(p2.add(p3)).div(3);
     
     p1 = pc.add(p1.sub(pc).mul(1.3));
     p2 = pc.add(p2.sub(pc).mul(1.3));
     p3 = pc.add(p3.sub(pc).mul(1.3)); */
-    
+
     /* 
     draw_line4(min_x, min_y, min_x, max_y, red);
     draw_line4(min_x, max_y, max_x, max_y, red);
     draw_line4(min_x, min_y, max_x, min_y, red);
     draw_line4(max_x, max_y, max_x, min_y, red); */
 
-    for(let x = bbox.min.data[0]; x <= bbox.max.data[0]; x++) {
-        for(let y = bbox.min.data[1]; y<= bbox.max.data[1]; y++) {
+    for (let x = bbox.min.data[0]; x <= bbox.max.data[0]; x++) {
+        for (let y = bbox.min.data[1]; y <= bbox.max.data[1]; y++) {
             let p = new Vec2(x, y);
-            if(is_inside(p, p1, p2, p3)) {
+            if (is_inside(p, p1, p2, p3)) {
                 draw_dot(p.x(), p.y(), color);
             }
         }
@@ -398,10 +401,10 @@ paint_canvas();
 clear_canvas();
 let model = await process('../res/head.js');
 
-let faces;
+let faces: Face[];
 if (model) {
     faces = model.faces;
-}else {
+} else {
     throw new Error("what's up");
 }
 
@@ -445,15 +448,15 @@ let fill_triangle_vec3 = (p1: Vec3, p2: Vec3, p3: Vec3, color: Color, z_buff: nu
     let bb_min = bbox.min;
     let bb_max = bbox.max;
 
-    for(let x = Math.floor(bb_min.x()); x <= Math.floor(bb_max.x()); x++) {
-        for(let y = Math.floor(bb_min.y()); y <= Math.floor(bb_max.y()); y++) {
+    for (let x = Math.floor(bb_min.x()); x <= Math.floor(bb_max.x()); x++) {
+        for (let y = Math.floor(bb_min.y()); y <= Math.floor(bb_max.y()); y++) {
             let p: Vec3 = new Vec3(x, y, 0);
-            let bary: Vec3 = get_barycentric_v3(p, p1, p2, p3);        
+            let bary: Vec3 = get_barycentric_v3(p, p1, p2, p3);
             let outside: boolean = bary.data.some(v => v < 0);
             let z = p1.z() * bary.x() + p2.z() * bary.y() + p3.z() * bary.z();
-            
+
             //console.log(z);
-            if(outside) continue;
+            if (outside) continue;
             if (Math.floor(x) == 311 && Math.floor(y) == (499 - 440)) {
                 console.log("Hit");
 
@@ -466,7 +469,7 @@ let fill_triangle_vec3 = (p1: Vec3, p2: Vec3, p3: Vec3, color: Color, z_buff: nu
             if (idx == (311 + (499 - 440) * canvas.width)) {
                 console.log(z);
             }
-            if(z > z_buff[idx]) {                
+            if (z > z_buff[idx]) {
                 z_buff[idx] = z;
                 //console.log(idx);
                 draw_dot(x, y, color);
@@ -484,7 +487,7 @@ let z_buff = (new Array(canvas.height * canvas.width)).fill(-10000);
 
 fill_triangle_vec3(new Vec3(0, 250, -2), new Vec3(100, 499, 1), new Vec3(100, 0, 1), red, z_buff);
 fill_triangle_vec3(new Vec3(20, 499, 3), new Vec3(20, 0, 3), new Vec3(150, 250, -3), blue, z_buff);
- 
+
 /* for(let f in faces) {
     
 
@@ -534,13 +537,13 @@ let fill_triangle_texture = (p1: Vec3, p2: Vec3, p3: Vec3, intensity: number, z_
     let bb_min = bbox.min;
     let bb_max = bbox.max;
 
-    for(let x = Math.floor(bb_min.x()); x <= Math.floor(bb_max.x()); x++) {
-        for(let y = Math.floor(bb_min.y()); y <= Math.floor(bb_max.y()); y++) {
+    for (let x = Math.floor(bb_min.x()); x <= Math.floor(bb_max.x()); x++) {
+        for (let y = Math.floor(bb_min.y()); y <= Math.floor(bb_max.y()); y++) {
             let p: Vec3 = new Vec3(x, y, 0);
-            let bary: Vec3 = get_barycentric_v3(p, p1, p2, p3);        
+            let bary: Vec3 = get_barycentric_v3(p, p1, p2, p3);
             let outside: boolean = bary.data.some(v => v < 0);
-            if(outside) continue;
-            let z = p1.z() * bary.x() + p2.z() * bary.y() + p3.z() * bary.z();            
+            if (outside) continue;
+            let z = p1.z() * bary.x() + p2.z() * bary.y() + p3.z() * bary.z();
             let t = t1.mul(bary.x()).add(t2.mul(bary.y())).add(t3.mul(bary.z()));
 
             let t_x = Math.floor(t.x() * texture_img.w);
@@ -551,9 +554,9 @@ let fill_triangle_texture = (p1: Vec3, p2: Vec3, p3: Vec3, intensity: number, z_
             let t_idx = 4 * (t_x + t_y * texture_img.w);
 
             let color: Color = {
-                r: texture_img.data[t_idx] * intensity,
-                g: texture_img.data[t_idx + 1] * intensity,
-                b: texture_img.data[t_idx + 2] * intensity,
+                r: 255 * intensity,
+                g: 255 * intensity,
+                b: 255 * intensity,
                 a: texture_img.data[t_idx + 3]
             }
             /*
@@ -561,7 +564,7 @@ let fill_triangle_texture = (p1: Vec3, p2: Vec3, p3: Vec3, intensity: number, z_
                    (0, 0)
             */
             let idx = Math.floor(x) + Math.floor(y) * canvas.width;
-            if(z > z_buff[idx]) {                
+            if (z > z_buff[idx]) {
                 z_buff[idx] = z;
                 //console.log(idx);
                 draw_dot(x, y, color);
@@ -575,15 +578,15 @@ let fill_triangle_texture_ = (p1: Vec3, p2: Vec3, p3: Vec3, i1: number, i2: numb
     let bb_min = bbox.min;
     let bb_max = bbox.max;
 
-    for(let x = Math.floor(bb_min.x()); x <= Math.floor(bb_max.x()); x++) {
-        for(let y = Math.floor(bb_min.y()); y <= Math.floor(bb_max.y()); y++) {
+    for (let x = Math.floor(bb_min.x()); x <= Math.floor(bb_max.x()); x++) {
+        for (let y = Math.floor(bb_min.y()); y <= Math.floor(bb_max.y()); y++) {
             let p: Vec3 = new Vec3(x, y, 0);
-            let bary: Vec3 = get_barycentric_v3(p, p1, p2, p3);        
+            let bary: Vec3 = get_barycentric_v3(p, p1, p2, p3);
             let outside: boolean = bary.data.some(v => v < 0);
-            if(outside) continue;
-            let z = p1.z() * bary.x() + p2.z() * bary.y() + p3.z() * bary.z();            
-            let i = i1 * bary.x() + i2 * bary.y() + i3 * bary.z();                        
-            
+            if (outside) continue;
+            let z = p1.z() * bary.x() + p2.z() * bary.y() + p3.z() * bary.z();
+            let i = i1 * bary.x() + i2 * bary.y() + i3 * bary.z();
+
             let t = t1.mul(bary.x()).add(t2.mul(bary.y())).add(t3.mul(bary.z()));
 
             let t_x = Math.floor(t.x() * texture_img.w);
@@ -594,8 +597,8 @@ let fill_triangle_texture_ = (p1: Vec3, p2: Vec3, p3: Vec3, i1: number, i2: numb
             let t_idx = 4 * (t_x + t_y * texture_img.w);
 
             i = i < 0 ? 0 : i;
-            
-            if (true) {                
+
+            if (true) {
                 let color: Color = {
                     r: 255 * i,
                     g: 255 * i,
@@ -607,17 +610,18 @@ let fill_triangle_texture_ = (p1: Vec3, p2: Vec3, p3: Vec3, i1: number, i2: numb
                        (0, 0)
                 */
                 let idx = Math.floor(x) + Math.floor(y) * canvas.width;
-                if(z > z_buff[idx]) {                
+                if (z > z_buff[idx]) {
                     z_buff[idx] = z;
                     //console.log(idx);
                     draw_dot(x, y, color);
                 }
             }
-            
+
         }
     }
 }
-/* for(let f in faces) {
+/*
+for(let f in faces) {
     let light_dir = new Vec3(0, 0,-1);
     let face = faces[f];
     let w1, w2, w3: Vec3;
@@ -660,59 +664,80 @@ let fill_triangle_texture_ = (p1: Vec3, p2: Vec3, p3: Vec3, i1: number, i2: numb
     intensity = normal.dot(light_dir);
     
     
-    if(intensity > 0) {
-        fill_triangle_texture(s1, s2, s3, intensity, z_buff, texture_img, t1, t2, t3);
+    if(intensity >= 0) {
+        fill_triangle_texture(s1, s2, s3, Math.random(), z_buff, texture_img, t1, t2, t3);
     } 
-} */
+} 
+*/
 
-for(let f in faces) {
-    let light_dir = new Vec3(3, 3, 1);
-    let face = faces[f];
-    let w1, w2, w3: Vec3;
-    let w1_, w2_, w3_: Vec4;
-    let s1, s2, s3: Vec3;
-    let t1, t2, t3: Vec2;    
-    let i1, i2, i3: number;
+let t = 0;
 
-    let n1, n2, n3: Vec3;
+function step() {
+    clear_canvas();
+    let light_dir = new Vec3(2 * Math.sin(t), 0, 2 * Math.cos(t));
+    let camera = Mat4.lookat(light_dir, new Vec3(0, 0, 0), new Vec3(0, 1, 0));
     let perspective = new Mat4();
-    let view = Mat4.viewport(canvas.width / 4, canvas.height / 4, canvas.width / 2, canvas.height / 2);
+    let screen = Mat4.viewport(canvas.width / 4, canvas.height / 4, canvas.width / 2, canvas.height / 2);
     let center: number = 5;
     perspective.data[3][2] = - 1 / center;
-
-    // t1, t2, t3 are texture coordinates of vertices of faces[f]
-    t1 = face.get_t_coord(0);
-    t2 = face.get_t_coord(1);
-    t3 = face.get_t_coord(2);
-    // w1, w2, w3 is world coordinates of vertices of faces[f]    
-    w1 = Vec3.from_vertex(face.get_vertex(0));
-    w2 = Vec3.from_vertex(face.get_vertex(1));    
-    w3 = Vec3.from_vertex(face.get_vertex(2));
-
-    w1_ = Vec4.from_num_arr(w1.data.concat(1));
-    w2_ = Vec4.from_num_arr(w2.data.concat(1));
-    w3_ = Vec4.from_num_arr(w3.data.concat(1));
-
-    w1_ = perspective.mul_v4(w1_).to_p();
-    w2_ = perspective.mul_v4(w2_).to_p();
-    w3_ = perspective.mul_v4(w3_).to_p();
-
+    let combined = screen.mul(perspective.mul(camera));
+    let z_buff = (new Array(canvas.height * canvas.width)).fill(-10000);
+    // z buffer used to perform z-test
     
-    // s1, s2, s3 is screen coordinates of vertices of faces[f]
-    s1 = Vec3.from_num_arr(view.mul_v4(w1_).data);
-    s2 = Vec3.from_num_arr(view.mul_v4(w2_).data);
-    s3 = Vec3.from_num_arr(view.mul_v4(w3_).data);
+    for (let f in faces) {
+        
+        let face = faces[f];
+        let w1, w2, w3: Vec3;
+        let w1_, w2_, w3_: Vec4;
+        let s1, s2, s3: Vec3;
+        let t1, t2, t3: Vec2;
+        // t1, t2, t3 are texture coordinates of vertices of faces[f]
+        let i1, i2, i3: number;
     
-    n1 = face.get_normal(0);
-    n2 = face.get_normal(1);
-    n3 = face.get_normal(2);
+        let n1, n2, n3: Vec3;
     
-    light_dir.normalize();
-    i1 = n1.dot(light_dir);
-    i2 = n2.dot(light_dir);
-    i3 = n3.dot(light_dir);
     
-    console.log([i1, i2, i3]);
-    fill_triangle_texture_(s1, s2, s3, i1, i2, i3, z_buff, texture_img, t1, t2, t3);
+    
+    
+        t1 = face.get_t_coord(0);
+        t2 = face.get_t_coord(1);
+        t3 = face.get_t_coord(2);
+        // w1, w2, w3 is world coordinates of vertices of faces[f]    
+        w1 = Vec3.from_vertex(face.get_vertex(0));
+        w2 = Vec3.from_vertex(face.get_vertex(1));
+        w3 = Vec3.from_vertex(face.get_vertex(2));
+    
+        w1_ = Vec4.from_num_arr(w1.data.concat(1));
+        w2_ = Vec4.from_num_arr(w2.data.concat(1));
+        w3_ = Vec4.from_num_arr(w3.data.concat(1));
+    
+        w1_ = combined.mul_v4(w1_).to_p();
+        w2_ = combined.mul_v4(w2_).to_p();
+        w3_ = combined.mul_v4(w3_).to_p();
+    
+    
+        // s1, s2, s3 is screen coordinates of vertices of faces[f]
+        s1 = Vec3.from_num_arr(w1_.data);
+        s2 = Vec3.from_num_arr(w2_.data);
+        s3 = Vec3.from_num_arr(w3_.data);
+    
+        n1 = face.get_normal(0);
+        n2 = face.get_normal(1);
+        n3 = face.get_normal(2);
+    
+        light_dir.normalize();
+        i1 = n1.dot(light_dir);
+        i2 = n2.dot(light_dir);
+        i3 = n3.dot(light_dir);
+    
+        fill_triangle_texture_(s1, s2, s3, i1, i2, i3, z_buff, texture_img, t1, t2, t3);
+    }
+    
+    t += 0.1;
+    paint_canvas();
+    window.requestAnimationFrame(step);
 }
-paint_canvas();
+console.log(t);
+
+
+window.requestAnimationFrame(step);

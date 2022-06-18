@@ -1,5 +1,5 @@
 import { Face, Vertex } from "./Model.js";
-import { Vec2, Vec3 } from './math/Vec.js'
+import { Vec2, Vec3 } from './math/Linear.js'
 
 let process = async (file_name: string) => {
     try {
@@ -26,7 +26,6 @@ let process = async (file_name: string) => {
             if (info_arr[0] == 'vn') {
                 info_arr = info_arr.filter((w: string)=>w.length >0);
                 normals.push(new Vec3(Number(info_arr[1]), Number(info_arr[2]), Number(info_arr[3])));
-                console.log(new Vec3(Number(info_arr[1]), Number(info_arr[2]), Number(info_arr[3])));
             } 
 
             if (info_arr[0] == 'f') {

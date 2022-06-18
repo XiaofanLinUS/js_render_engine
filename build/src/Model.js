@@ -1,4 +1,4 @@
-import { Vec3 } from './math/Vec.js';
+import { Vec3 } from './math/Linear.js';
 class Face {
     v_idx_arr;
     n_idx_arr;
