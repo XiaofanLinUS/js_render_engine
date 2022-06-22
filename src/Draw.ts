@@ -1,5 +1,6 @@
 import { Img } from "./ImageLoader.js";
 import { Vec2, Vec3 } from "./math/Linear.js";
+import { Shader } from "./Shader.js";
 
 
 
@@ -257,6 +258,31 @@ class Draw {
                         this.draw_dot(x, y, color);
                     }
                 }
+
+            }
+        }
+    }
+
+    fill_triangle_shader([p1, p2, p3]: Vec3[], shader: Shader, z_buff: number[]) {
+        let bbox = find_bbox(Vec2.from_vec3(p1), Vec2.from_vec3(p2), Vec2.from_vec3(p3), this.w, this.h);
+        let bb_min = bbox.min;
+        let bb_max = bbox.max;
+
+        for (let x = Math.floor(bb_min.x()); x <= Math.floor(bb_max.x()); x++) {
+            for (let y = Math.floor(bb_min.y()); y <= Math.floor(bb_max.y()); y++) {
+                let p: Vec3 = new Vec3(x, y, 0);
+                let bary: Vec3 = get_barycentric_v3(p, p1, p2, p3);
+                let outside: boolean = bary.data.some(v => v < 0);
+                if (outside) continue;
+                let z = p1.z() * bary.x() + p2.z() * bary.y() + p3.z() * bary.z();
+                let color = shader.fragment(bary);
+                let idx = Math.floor(x) + Math.floor(y) * this.w;
+                if (z > z_buff[idx]) {
+                    z_buff[idx] = z;
+                    //console.log(idx);
+                    this.draw_dot(x, y, color);
+                }
+
 
             }
         }
