@@ -50,12 +50,12 @@ faces = model.faces;
 let texture_img: Img = await load_img('../res/head.png');
 let normal_img: Img = await load_img('../res/head_nm.png');
 
-let center = new Vec3(-1, -1, 1.5);
+let center = new Vec3(-1, 0, 1);
 let target  = new Vec3(0, 0, 0);
 let up = new Vec3(0, 1, 0);
 let camera = Mat4.lookat(center, target, up);
 
-let light_dir = new Vec3(1, 1, 1);
+let light_dir = new Vec3(1, 0, 0);
 light_dir.normalize();
 
 let perspective = new Mat4();
@@ -125,25 +125,26 @@ class GouraudShader extends Shader {
         //console.log(normal.norm());
         //normal.normalize();
         //light_dir.normalize();
+        normal.div(255/2).sub(new Vec3(1,1,1))
+        normal.normalize();
 
-        //normal = this.M_IT.mul_v3(normal);
-        //light_dir = this.M.mul_v3(light_dir);
+        /* normal = this.M_IT.mul_v3(normal);
+        light_dir = this.M.mul_v3(light_dir);
+        */
         
-        //normal.normalize();
-        //light_dir.normalize();
+        normal.normalize();
+        light_dir.normalize();
 
         //console.log(normal.data);
 
-        normal.normalize();
-        light_dir.normalize();
-        let final_intensity = Math.max(0, normal.dot(light_dir));
+        let final_intensity = Math.max(0, light_dir.dot(normal));
         
         //console.log(normal.data);
         let r = final_intensity * 255;
         let g = final_intensity * 255;
         let b = final_intensity * 255;
 
-        return {r: r, g: g, b: b, a: 255};
+        return {r:r, g:g, b:b, a:255};
     }
 }
 
@@ -152,16 +153,20 @@ let g_shader = new GouraudShader();
 g_shader.M = perspective.mul(camera);
 g_shader.M_IT = Mat4.t(Mat4.inv(g_shader.M));
 
-let u = new Vec3(2, 0, 2);
+let u = new Vec3(1, 1, 0);
 let v = new Vec3(0, 0, 1);
 
 u.normalize();
 v.normalize();
+
 let u_ = g_shader.M.mul_v3(u);
 let v_ = g_shader.M_IT.mul_v3(v);
 
+console.log(g_shader.M.mul(g_shader.M_IT).data);
+
 u_.normalize();
 v_.normalize();
+
 console.log(u_.dot(v_));
 console.log(u.dot(v));
 

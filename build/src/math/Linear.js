@@ -170,7 +170,7 @@ class Mat4 {
                 result.data[i] += a[i][j] * b[j];
             }
         }
-        result.to_p();
+        //result.to_p();
         return Vec3.from_num_arr(result.data);
     }
     mul_v4(v2) {

@@ -222,7 +222,7 @@ class Mat4 {
         }
 
         
-        result.to_p();
+        //result.to_p();
 
         return Vec3.from_num_arr(result.data);
     }
