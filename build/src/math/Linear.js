@@ -154,6 +154,25 @@ class Mat4 {
         }
         return Mat4.from_num_mat(c);
     }
+    mul_v3(v2) {
+        let a = this.data;
+        let b = v2.data;
+        let result = new Vec4(0, 0, 0, 0);
+        b = b.concat(1);
+        //console.log(b);
+        for (let i = 0; i <= 3; i++) {
+            for (let j = 0; j <= 3; j++) {
+                let r = a[i][j] * b[j];
+                if (isNaN(r)) {
+                    //console.log(`a: ${a[i][j]}`);                    
+                    //console.log(`b: ${b[j]}`);
+                }
+                result.data[i] += a[i][j] * b[j];
+            }
+        }
+        result.to_p();
+        return Vec3.from_num_arr(result.data);
+    }
     mul_v4(v2) {
         let a = this.data;
         let b = v2.data;
@@ -164,6 +183,59 @@ class Mat4 {
             }
         }
         return result;
+    }
+    static t(m) {
+        let transpose = new Mat4();
+        for (let i = 0; i <= 3; i++) {
+            for (let j = 0; j <= 3; j++) {
+                transpose.data[i][j] = m.data[j][i];
+            }
+        }
+        //console.log(transpose.data);
+        return transpose;
+    }
+    static inv(m) {
+        let A2323 = m.data[2][2] * m.data[3][3] - m.data[2][3] * m.data[3][2];
+        let A1323 = m.data[2][1] * m.data[3][3] - m.data[2][3] * m.data[3][1];
+        let A1223 = m.data[2][1] * m.data[3][2] - m.data[2][2] * m.data[3][1];
+        let A0323 = m.data[2][0] * m.data[3][3] - m.data[2][3] * m.data[3][0];
+        let A0223 = m.data[2][0] * m.data[3][2] - m.data[2][2] * m.data[3][0];
+        let A0123 = m.data[2][0] * m.data[3][1] - m.data[2][1] * m.data[3][0];
+        let A2313 = m.data[1][2] * m.data[3][3] - m.data[1][3] * m.data[3][2];
+        let A1313 = m.data[1][1] * m.data[3][3] - m.data[1][3] * m.data[3][1];
+        let A1213 = m.data[1][1] * m.data[3][2] - m.data[1][2] * m.data[3][1];
+        let A2312 = m.data[1][2] * m.data[2][3] - m.data[1][3] * m.data[2][2];
+        let A1312 = m.data[1][1] * m.data[2][3] - m.data[1][3] * m.data[2][1];
+        let A1212 = m.data[1][1] * m.data[2][2] - m.data[1][2] * m.data[2][1];
+        let A0313 = m.data[1][0] * m.data[3][3] - m.data[1][3] * m.data[3][0];
+        let A0213 = m.data[1][0] * m.data[3][2] - m.data[1][2] * m.data[3][0];
+        let A0312 = m.data[1][0] * m.data[2][3] - m.data[1][3] * m.data[2][0];
+        let A0212 = m.data[1][0] * m.data[2][2] - m.data[1][2] * m.data[2][0];
+        let A0113 = m.data[1][0] * m.data[3][1] - m.data[1][1] * m.data[3][0];
+        let A0112 = m.data[1][0] * m.data[2][1] - m.data[1][1] * m.data[2][0];
+        let det = m.data[0][0] * (m.data[1][1] * A2323 - m.data[1][2] * A1323 + m.data[1][3] * A1223)
+            - m.data[0][1] * (m.data[1][0] * A2323 - m.data[1][2] * A0323 + m.data[1][3] * A0223)
+            + m.data[0][2] * (m.data[1][0] * A1323 - m.data[1][1] * A0323 + m.data[1][3] * A0123)
+            - m.data[0][3] * (m.data[1][0] * A1223 - m.data[1][1] * A0223 + m.data[1][2] * A0123);
+        det = 1 / det;
+        let inv_mat = new Mat4();
+        inv_mat.data[0][0] = det * (m.data[1][1] * A2323 - m.data[1][2] * A1323 + m.data[1][3] * A1223);
+        inv_mat.data[0][1] = det * -(m.data[0][1] * A2323 - m.data[0][2] * A1323 + m.data[0][3] * A1223);
+        inv_mat.data[0][2] = det * (m.data[0][1] * A2313 - m.data[0][2] * A1313 + m.data[0][3] * A1213);
+        inv_mat.data[0][3] = det * -(m.data[0][1] * A2312 - m.data[0][2] * A1312 + m.data[0][3] * A1212);
+        inv_mat.data[1][0] = det * -(m.data[1][0] * A2323 - m.data[1][2] * A0323 + m.data[1][3] * A0223);
+        inv_mat.data[1][1] = det * (m.data[0][0] * A2323 - m.data[0][2] * A0323 + m.data[0][3] * A0223);
+        inv_mat.data[1][2] = det * -(m.data[0][0] * A2313 - m.data[0][2] * A0313 + m.data[0][3] * A0213);
+        inv_mat.data[1][3] = det * (m.data[0][0] * A2312 - m.data[0][2] * A0312 + m.data[0][3] * A0212);
+        inv_mat.data[2][0] = det * (m.data[1][0] * A1323 - m.data[1][1] * A0323 + m.data[1][3] * A0123);
+        inv_mat.data[2][1] = det * -(m.data[0][0] * A1323 - m.data[0][1] * A0323 + m.data[0][3] * A0123);
+        inv_mat.data[2][2] = det * (m.data[0][0] * A1313 - m.data[0][1] * A0313 + m.data[0][3] * A0113);
+        inv_mat.data[2][3] = det * -(m.data[0][0] * A1312 - m.data[0][1] * A0312 + m.data[0][3] * A0112);
+        inv_mat.data[3][0] = det * -(m.data[1][0] * A1223 - m.data[1][1] * A0223 + m.data[1][2] * A0123);
+        inv_mat.data[3][1] = det * (m.data[0][0] * A1223 - m.data[0][1] * A0223 + m.data[0][2] * A0123);
+        inv_mat.data[3][2] = det * -(m.data[0][0] * A1213 - m.data[0][1] * A0213 + m.data[0][2] * A0113);
+        inv_mat.data[3][3] = det * (m.data[0][0] * A1212 - m.data[0][1] * A0212 + m.data[0][2] * A0112);
+        return inv_mat;
     }
     static viewport(a, b, w, h) {
         let mtx = new Mat4();

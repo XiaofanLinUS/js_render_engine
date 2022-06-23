@@ -36,7 +36,7 @@ let faces;
 faces = model.faces;
 let texture_img = await load_img('../res/head.png');
 let normal_img = await load_img('../res/head_nm.png');
-let center = new Vec3(1, 1, 1.5);
+let center = new Vec3(-1, -1, 1.5);
 let target = new Vec3(0, 0, 0);
 let up = new Vec3(0, 1, 0);
 let camera = Mat4.lookat(center, target, up);
@@ -61,6 +61,8 @@ function sample_img(img, t_coord) {
 class GouraudShader extends Shader {
     intensity;
     t_coord;
+    M;
+    M_IT;
     constructor() {
         super();
         this.intensity = new Array(3).fill(0);
@@ -77,28 +79,45 @@ class GouraudShader extends Shader {
         return Vec3.from_num_arr(s.data);
     }
     fragment(bary) {
-        let final_intensity = this.intensity[0] * bary.x() + this.intensity[1] * bary.y() + this.intensity[2] * bary.z();
+        //let final_intensity = this.intensity[0] * bary.x() + this.intensity[1] * bary.y() + this.intensity[2] * bary.z();
         let final_t_coord = this.t_coord[0].mul(bary.x()).add(this.t_coord[1].mul(bary.y())).add(this.t_coord[2].mul(bary.z()));
         let color = sample_img(texture_img, final_t_coord);
-        if (final_intensity > .85)
-            final_intensity = 1;
-        else if (final_intensity > .60)
-            final_intensity = .80;
-        else if (final_intensity > .45)
-            final_intensity = .60;
-        else if (final_intensity > .30)
-            final_intensity = .45;
-        else if (final_intensity > .15)
-            final_intensity = .30;
-        else
-            final_intensity = 0;
-        let r = final_intensity * color.r;
-        let g = final_intensity * color.g;
-        let b = final_intensity * color.b;
+        let normal_color = sample_img(normal_img, final_t_coord);
+        let normal = new Vec3(normal_color.r, normal_color.g, normal_color.b);
+        //normal  = normal.div(255);
+        //console.log(normal.data);
+        //console.log(normal.norm());
+        //normal.normalize();
+        //light_dir.normalize();
+        //normal = this.M_IT.mul_v3(normal);
+        //light_dir = this.M.mul_v3(light_dir);
+        //normal.normalize();
+        //light_dir.normalize();
+        //console.log(normal.data);
+        normal.normalize();
+        light_dir.normalize();
+        let final_intensity = Math.max(0, normal.dot(light_dir));
+        //console.log(normal.data);
+        let r = final_intensity * 255;
+        let g = final_intensity * 255;
+        let b = final_intensity * 255;
         return { r: r, g: g, b: b, a: 255 };
     }
 }
 let g_shader = new GouraudShader();
+g_shader.M = perspective.mul(camera);
+g_shader.M_IT = Mat4.t(Mat4.inv(g_shader.M));
+let u = new Vec3(2, 0, 2);
+let v = new Vec3(0, 0, 1);
+u.normalize();
+v.normalize();
+let u_ = g_shader.M.mul_v3(u);
+let v_ = g_shader.M_IT.mul_v3(v);
+u_.normalize();
+v_.normalize();
+console.log(u_.dot(v_));
+console.log(u.dot(v));
+console.log(Mat4.inv(Mat4.from_num_mat([[2, 5, 0, 8], [1, 4, 2, 6], [7, 8, 9, 3], [1, 5, 7, 8]])).data);
 let z_buff = (new Array(canvas.height * canvas.width)).fill(-Infinity);
 function step() {
     paper.clear();
