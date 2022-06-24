@@ -1,6 +1,6 @@
-import { Img } from "./ImageLoader.js";
-import { Vec2, Vec3 } from "./math/Linear.js";
-import { Shader } from "./Shader.js";
+import { Img } from "./ImageLoader";
+import { Vec2, Vec3 } from "./math/Linear";
+import { Shader } from "./Shader";
 
 
 

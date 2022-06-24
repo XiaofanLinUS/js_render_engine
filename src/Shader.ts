@@ -1,6 +1,5 @@
-import { Color } from "./Draw.js";
-import { Vec2, Vec3 } from "./math/Linear.js";
-
+import { Color } from "./Draw";
+import { Vec2, Vec3 } from "./math/Linear";
 class VertexData {
     v: Vec3
     n: Vec3

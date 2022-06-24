@@ -1,4 +1,4 @@
-import {Vec2, Vec3} from './math/Linear.js'
+import {Vec2, Vec3} from './math/Linear'
 
 class Face {
     v_idx_arr : number[]

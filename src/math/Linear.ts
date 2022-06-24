@@ -207,16 +207,11 @@ class Mat4 {
         let b = v2.data;        
         let result: Vec4 = new Vec4(0, 0, 0, 0);
 
-        b = b.concat(1);
+        b = b.concat(0);
         //console.log(b);
 
         for (let i = 0; i <= 3; i++) {
             for (let j = 0; j <= 3; j++) {
-                let r = a[i][j] * b[j];
-                if(isNaN(r)) {
-                    //console.log(`a: ${a[i][j]}`);                    
-                    //console.log(`b: ${b[j]}`);
-                }
                 result.data[i] += a[i][j] * b[j];
             }
         }

@@ -1,9 +1,10 @@
-import process from './ObjectParser.js'
-import { load_img, Img } from './ImageLoader.js';
-import { Vec2, Vec3, Vec4, Mat4 } from './math/Linear.js'
-import { Face, Vertex } from './Model.js';
-import { Draw, Color } from './Draw.js';
-import { Shader, VertexData } from './Shader.js';
+import process from './ObjectParser'
+import { load_img, Img } from './ImageLoader';
+import { Vec2, Vec3, Vec4, Mat4 } from './math/Linear'
+import { Face, Vertex } from './Model';
+import { Draw, Color } from './Draw';
+import { Shader, VertexData } from './Shader';
+import {mat4, vec4} from "gl-matrix";
 
 let canvas: HTMLCanvasElement = document.querySelector("#view");
 canvas.width = 1200;
@@ -41,21 +42,21 @@ let black: Color = {
 };
 
 
-let model = await process('../res/head.js');
+let model = await process('head');
 
 let faces: Face[];
 faces = model.faces;
 
 
-let texture_img: Img = await load_img('../res/head.png');
-let normal_img: Img = await load_img('../res/head_nm.png');
+let texture_img: Img = await load_img('head');
+let normal_img: Img = await load_img('head_nm');
 
-let center = new Vec3(-1, 0, 1);
+let center = new Vec3(0, 0, 1);
 let target  = new Vec3(0, 0, 0);
 let up = new Vec3(0, 1, 0);
 let camera = Mat4.lookat(center, target, up);
 
-let light_dir = new Vec3(1, 0, 0);
+let light_dir = new Vec3(1, -1, 1);
 light_dir.normalize();
 
 let perspective = new Mat4();
@@ -126,23 +127,22 @@ class GouraudShader extends Shader {
         //normal.normalize();
         //light_dir.normalize();
         normal.div(255/2).sub(new Vec3(1,1,1))
-        normal.normalize();
 
-        /* normal = this.M_IT.mul_v3(normal);
+        normal = this.M_IT.mul_v3(normal);
         light_dir = this.M.mul_v3(light_dir);
-        */
+        
         
         normal.normalize();
         light_dir.normalize();
 
-        //console.log(normal.data);
+        //console.log(light_dir.dot(normal));
 
         let final_intensity = Math.max(0, light_dir.dot(normal));
         
         //console.log(normal.data);
-        let r = final_intensity * 255;
-        let g = final_intensity * 255;
-        let b = final_intensity * 255;
+        let r = final_intensity * color.r;
+        let g = final_intensity * color.g;
+        let b = final_intensity * 0;
 
         return {r:r, g:g, b:b, a:255};
     }
@@ -151,26 +151,51 @@ class GouraudShader extends Shader {
 let g_shader = new GouraudShader();
 
 g_shader.M = perspective.mul(camera);
+
+let M = perspective.mul(camera);
+
+let m_ = mat4.create();
+ 
+let m = mat4.fromValues(
+    M.data[0][0], M.data[1][0], M.data[2][0], M.data[3][0],
+    M.data[0][1], M.data[1][1], M.data[2][1], M.data[3][1],
+    M.data[0][2], M.data[1][2], M.data[2][2], M.data[3][2],
+    M.data[0][3], M.data[1][3], M.data[2][3], M.data[3][3]); 
+mat4.invert(m_, m);
+ 
 g_shader.M_IT = Mat4.t(Mat4.inv(g_shader.M));
 
-let u = new Vec3(1, 1, 0);
-let v = new Vec3(0, 0, 1);
+console.log(`m_ ${m_}`);
+console.log(`m ${g_shader.M_IT.data}`);
 
-u.normalize();
-v.normalize();
+let u = new Vec4(1, 1, 5, 1);
+let t = new Vec4(0, 0, 0, 1);
+let v = new Vec4(1, 2, 1, 0);
+let ut = u.sub(t);
 
-let u_ = g_shader.M.mul_v3(u);
-let v_ = g_shader.M_IT.mul_v3(v);
+let u_ = g_shader.M.mul_v4(u);
+let t_ = g_shader.M.mul_v4(t);
+let v_ = g_shader.M_IT.mul_v4(v);
 
 console.log(g_shader.M.mul(g_shader.M_IT).data);
 
-u_.normalize();
+let ut__ = g_shader.M.mul_v4(ut);
+let ut_ = u_.sub(t_);
+
+
+ut.normalize();
+v.normalize();
+
+ut_.normalize();
+ut__.normalize();
 v_.normalize();
 
-console.log(u_.dot(v_));
-console.log(u.dot(v));
+console.log(ut.dot(v));
+console.log(ut_.dot(v_));
 
-console.log(Mat4.inv(Mat4.from_num_mat([[2,5,0,8],[1,4,2,6],[7,8,9,3],[1,5,7,8]])).data);
+console.log(`ut__ ${ut__.data}`);
+console.log(`ut_ ${ut_.data}`);
+//console.log(Mat4.inv(Mat4.from_num_mat([[2,5,0,8],[1,4,2,6],[7,8,9,3],[1,5,7,8]])).data);
 
 let z_buff = (new Array(canvas.height * canvas.width)).fill(-Infinity);
 function step() {

@@ -1,9 +1,14 @@
-import { Face, Vertex } from "./Model.js";
-import { Vec2, Vec3 } from './math/Linear.js'
+import { Face, Vertex } from "./Model";
+import { Vec2, Vec3 } from './math/Linear'
 
 let process = async (file_name: string) => {
-    try {
-        let data = (await import(file_name)).default;    
+    let url = require('url:./res/*.obj');
+
+    try {        
+        let data = await fetch(url[file_name], {
+            credentials: 'include',
+            method: 'get'
+          }).then((body)=>body.text());
         let lines = data.split('\n');
         let faces: Face[] = new Array;
         let vertices: Vertex[] = new Array
