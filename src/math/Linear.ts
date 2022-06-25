@@ -61,6 +61,18 @@ class Vec3 {
         return this.data[2];
     }
 
+    add(v2: Vec2) {
+        let new_data: number[] = this.data.map((val, idx) => val + v2.data[idx]);
+
+        return new Vec3(new_data[0], new_data[1], new_data[2]);
+    }
+
+    mul(val: number) {
+        let new_data = this.data.map((v) => v * val);
+
+        return new Vec3(new_data[0], new_data[1], new_data[2]);
+    }
+
     div(val: number) {
         let new_data = this.data.map((v) => v / val);
 
@@ -94,10 +106,12 @@ class Vec3 {
 
         return Math.sqrt(result);
     }
-    normalize(): void {
+    normalize(): Vec3 {
         let norm = this.norm();
 
         this.data = this.div(norm).data;
+
+        return Vec3.from_num_arr(this.data);
     }
     static from_vertex = (v: Vertex) => {
         return new Vec3(v.data.data[0], v.data.data[1], v.data.data[2]);
@@ -105,6 +119,10 @@ class Vec3 {
 
     static from_num_arr = (num_arr: number[]) => {
         return new Vec3(num_arr[0], num_arr[1], num_arr[2]);
+    }
+
+    static v4 = (v: Vec4) => {
+        return Vec3.from_num_arr(v.data);
     }
 }
 class Vec4 {
@@ -202,13 +220,12 @@ class Mat4 {
         return Mat4.from_num_mat(c);
     }
 
-    mul_v3(v2: Vec3) {
+    mul_v3(v2: Vec3, fill: number) {
         let a = this.data;
         let b = v2.data;        
         let result: Vec4 = new Vec4(0, 0, 0, 0);
 
-        b = b.concat(0);
-        //console.log(b);
+        b = b.concat(fill);
 
         for (let i = 0; i <= 3; i++) {
             for (let j = 0; j <= 3; j++) {
@@ -216,10 +233,7 @@ class Mat4 {
             }
         }
 
-        
-        //result.to_p();
-
-        return Vec3.from_num_arr(result.data);
+        return Vec4.from_num_arr(result.data);
     }
     mul_v4(v2: Vec4) {
         let a = this.data;

@@ -2,10 +2,8 @@ import { Face, Vertex } from "./Model";
 import { Vec2, Vec3 } from './math/Linear'
 
 let process = async (file_name: string) => {
-    let url = require('url:./res/*.obj');
-
     try {        
-        let data = await fetch(url[file_name], {
+        let data = await fetch(file_name, {
             credentials: 'include',
             method: 'get'
           }).then((body)=>body.text());

@@ -5,13 +5,12 @@ interface Img {
 }
 
 let load_img = (src: string): Promise<Img> => {
-    let url = require("url:./res/**.png");
     //src = url;
     let img_promise: Promise<Img>;
 
     img_promise = new Promise((r, e)=>{
         let img = new Image();
-        img.src = url[src];
+        img.src = src;
         img.onload = () => r(img);
         img.onerror = (event) => {
             console.log(event);
@@ -37,4 +36,5 @@ let load_img = (src: string): Promise<Img> => {
     return img_promise;
 }
 
-export {Img, load_img};
+export { load_img };
+export type { Img };

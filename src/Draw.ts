@@ -406,4 +406,5 @@ let is_inside = (p: Vec2, a: Vec2, b: Vec2, c: Vec2): boolean => {
     return !failed;
 }
 
-export { Color, Draw }
+export { Draw };
+export type { Color };
