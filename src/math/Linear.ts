@@ -109,9 +109,7 @@ class Vec3 {
     normalize(): Vec3 {
         let norm = this.norm();
 
-        this.data = this.div(norm).data;
-
-        return Vec3.from_num_arr(this.data);
+        return Vec3.from_num_arr(this.div(norm).data);
     }
     static from_vertex = (v: Vertex) => {
         return new Vec3(v.data.data[0], v.data.data[1], v.data.data[2]);
@@ -325,10 +323,10 @@ class Mat4 {
     static lookat(eye: Vec3, target: Vec3, up: Vec3) {
         let te = eye.sub(target);
         let i, j, k: Vec3;
-        te.normalize();
+        te = te.normalize();
         k = te;
         i = up.cross(k);
-        i.normalize();
+        i = i.normalize();
         j = k.cross(i);
 
         let rot = new Mat4();
