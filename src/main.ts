@@ -1,15 +1,15 @@
 import process from './ObjectParser'
 import { load_img, Img } from './ImageLoader';
-import { Vec2, Vec3, Vec4, Mat4 } from './math/Linear'
+import { Vec2, Vec3, Vec4, Mat3, Mat4 } from './math/Linear'
 import { Face } from './Model';
 import { Draw, Color } from './Draw';
 import { Shader, VertexData } from './Shader';  
-import { mat4, vec3, vec4 } from 'gl-matrix';
+import { mat3, mat4, vec3, vec4 } from 'gl-matrix';
 
 
 import head_obj_url from './res/head.obj'
 import head_url from './res/head.png'
-import head_nm_url from './res/head_nm.png'
+import head_nm_url from './res/head_nm_tangent.png'
 
 let canvas: HTMLCanvasElement = document.querySelector("#view");
 canvas.width = 1200;
@@ -62,7 +62,7 @@ let target  = new Vec3(0, 0, 0);
 let up = new Vec3(0, 1, 0);
 let camera = Mat4.lookat(center, target, up);
 
-let light_dir = new Vec3(0, 0, 1);
+let light_dir = new Vec3(0, -0.1, 1);
 light_dir = light_dir.normalize();
 
 let perspective = new Mat4();
@@ -114,6 +114,7 @@ class GouraudShader extends Shader {
 
         s = combined.mul_v4(s).to_p();
 
+
         this.normal_[idx] = n;
         this.p_coord[idx] = v;
         this.intensity[idx] = i;
@@ -122,11 +123,27 @@ class GouraudShader extends Shader {
         return Vec3.from_num_arr(s.data);
     }
 
-
     override fragment(bary: Vec3) {        
         //let final_intensity = this.intensity[0] * bary.x() + this.intensity[1] * bary.y() + this.intensity[2] * bary.z();
         let final_t_coord   = this.t_coord[0].mul(bary.x()).add(this.t_coord[1].mul(bary.y())).add(this.t_coord[2].mul(bary.z()));
         //let final_p_coord   = this.p_coord[0].mul(bary.x()).add(this.p_coord[1].mul(bary.y())).add(this.p_coord[2].mul(bary.z()));
+
+        let fn = this.normal_[0].mul(bary.x()).add(this.normal_[1].mul(bary.y())).add(this.normal_[2].mul(bary.z())).normalize();
+        let t = this.t_coord;
+
+        let p0p1 = this.p_coord[1].sub(this.p_coord[0]);
+        let p0p2 = this.p_coord[2].sub(this.p_coord[0]);
+
+        //let A = mat3.transpose(mat3.create(), mat3.fromValues(p0p1.data[0], p0p1.data[1], p0p1.data[2], p0p2.data[0], p0p2.data[1], p0p2.data[2], p2p1.data[0], p2p1.data[1], p2p1.data[2]));
+        
+        let A = Mat3.from_num_mat([p0p1.data, p0p2.data, fn.data]);
+        let A_ = Mat3.inv(A);
+        
+        let u = new Vec3(t[1].x()-t[0].x(), t[2].x() - t[0].x(), 0);
+        
+        let i = A_.mul_v3(u).normalize();
+        let j = fn.cross(i);
+
         let normal = this.normal_[0].mul(bary.x()).add(this.normal_[1].mul(bary.y())).add(this.normal_[2].mul(bary.z()));
         let color = sample_img(texture_img, final_t_coord);
         let normal_color = sample_img(normal_img, final_t_coord);
@@ -134,48 +151,23 @@ class GouraudShader extends Shader {
         normal = new Vec3(normal_color.r, normal_color.g, normal_color.b);
         normal = normal.mul(2/255).sub(new Vec3(1,1,1));
         normal = normal.normalize();
-        
+
+                
+        let t_normal = i.mul(normal.x()).add(j.mul(normal.y())).add(fn.mul(normal.z()));
         let eye_dir = center.sub(new Vec3(0, 0, 0)).normalize();
-        let reflect = normal.mul(2*normal.dot(light_dir)).sub(light_dir).normalize();
-
-        /*
-        let normal_ = vec4.fromValues(normal.x(), normal.y(), normal.z(), 0);
-        normal_ = vec4.transformMat4(vec4.create(), normal_, this.M_IT);
-        let light_dir_ = vec4.fromValues(light_dir.x(), light_dir.y(), light_dir.z(), 0);
-        light_dir_ = vec4.transformMat4(vec4.create(), light_dir_, this.M);
-
-        let normal__ = vec3.fromValues(normal_[0], normal_[1], normal_[2]);
-        let light_dir__ = vec3.fromValues(light_dir_[0], light_dir_[1], light_dir_[2]);
-       
-
-
-        vec3.normalize(normal__, normal__);
-        vec3.normalize(light_dir__, light_dir__);
-        */
-
+        let reflect = t_normal.mul(2*t_normal.dot(light_dir)).sub(light_dir).normalize();
         
-        
-        let _light_dir = Vec3.v4(this.M.mul_v3(light_dir, 0)).normalize();
-        let _normal = Vec3.v4(this.M_IT.mul_v3(normal, 0)).normalize();
+        let _light_dir = Vec3.proj(this.M.mul_v3(light_dir, 0)).normalize();
+        let _normal = Vec3.proj(this.M_IT.mul_v3(t_normal, 0)).normalize();
 
-        // reflect = _normal.mul(2*_normal.dot(_light_dir)).sub(_light_dir).normalize();
-        // eye_dir = Vec3.v4(this.M.mul_v3(eye_dir, 0)).normalize()
-        
-        //normal = Vec3.v4(this.M_IT.mul_v3(normal, 0));
-        //light_dir = Vec3.v4(this.M.mul_v3(light_dir, 0));
+        reflect = _normal.mul(2*_normal.dot(_light_dir)).sub(_light_dir).normalize();
+        eye_dir = Vec3.proj(this.M.mul_v3(eye_dir, 0)).normalize();
 
-        
-
-        
-
-       
 
         let spec = 1 * Math.max(0, Math.pow(Math.max(reflect.dot(eye_dir), 0), 55));
-        let diff = Math.max(0,normal.dot(light_dir));
+        let diff = Math.max(0,_normal.dot(_light_dir));
         let ambi  = 5;
 
-        
-        //console.log(normal.data);
         let r = Math.min(ambi + color.r * (spec + diff), 255);
         let g = Math.min(ambi + color.g * (spec + diff), 255);
         let b = Math.min(ambi + color.b * (spec + diff), 255);
@@ -184,67 +176,15 @@ class GouraudShader extends Shader {
     }
 }
 
-
 let g_shader = new GouraudShader();
-//g_shader.M = perspective.mul(camera); 
-//g_shader.M_IT = Mat4.t(Mat4.inv(perspective.mul(camera)));
+g_shader.M = perspective.mul(camera); 
+g_shader.M_IT = Mat4.t(Mat4.inv(perspective.mul(camera)));
 let z_buff = (new Array(canvas.height * canvas.width)).fill(-Infinity);
 
 
-/*
-let cam = mat4.create();
-mat4.lookAt(cam, vec3.fromValues(center.x(),center.y(),center.z()), vec3.fromValues(target.x(), target.y(), target.z()), vec3.fromValues(0, 1, 0));
-let per = mat4.create();
-per[3 + 2 * 4] = - 1;
-g_shader.M = mat4.create();
-mat4.mul(g_shader.M, per, cam);
-
-g_shader.M_IT = mat4.create();
-mat4.invert(g_shader.M_IT, g_shader.M);
-mat4.transpose(g_shader.M_IT, g_shader.M_IT);
-
-
-console.log(`g_shader.MIT ${mat4.str(g_shader.M_IT)}`);
-console.log(`MIT ${Mat4.inv(perspective.mul(camera)).data}`);
-
-
-
-console.log(`g_shader.M ${mat4.str(g_shader.M)}`);
-console.log(`M ${Mat4.t(perspective.mul(camera)).data}`);
-
-console.log(`cam ${cam}`);
-console.log(`camera ${Mat4.t(camera).data}`);
-
-
-console.log(`per ${per}`);
-console.log(`per_${Mat4.t(perspective).data}`);
-*/
-
-g_shader.M = perspective.mul(camera); 
-g_shader.M_IT = Mat4.t(Mat4.inv(perspective.mul(camera)));
-
-
-
-let u = new Vec4(1, 1, 1, 0);
-let v = new Vec4(0, 1, 0, 0);
-let u_ = g_shader.M.mul_v4(u);
-let v_ = g_shader.M_IT.mul_v4(v);
-
-u.normalize();
-v.normalize();
-
-u_.normalize();
-v_.normalize();
-
-console.log(u.dot(v));
-console.log(u_.dot(v_));
-
-
 function step() {
-    paper.clear();        
-    // z buffer used to perform z-test
-    for (let f in faces) {
-        
+    paper.clear();
+    for (let f in faces) {        
         let face = faces[f];
         let s_coords : Vec3[] = new Array();
 

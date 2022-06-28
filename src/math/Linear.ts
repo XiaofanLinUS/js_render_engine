@@ -119,7 +119,7 @@ class Vec3 {
         return new Vec3(num_arr[0], num_arr[1], num_arr[2]);
     }
 
-    static v4 = (v: Vec4) => {
+    static proj = (v: Vec4) => {
         return Vec3.from_num_arr(v.data);
     }
 }
@@ -187,6 +187,83 @@ class Vec4 {
     }
 }
 
+
+class Mat3 {
+    data: number[][]
+    constructor() {
+        this.data = [[1, 0, 0], [0, 1, 0], [0, 0, 1]]
+    }
+
+    static from_num_mat(data: number[][]) {
+        let result = new Mat3();
+        result.data = JSON.parse(JSON.stringify(data));
+        return result;
+    }
+
+    mul(m2: Mat3) {
+        let a = this.data;
+        let b = m2.data;
+        let c = [[1, 0, 0], [0, 1, 0], [0, 0, 1]];
+
+        for (let i = 0; i <= 2; i++) {
+            for (let j = 0; j <= 2; j++) {
+                let sum = 0;
+                for (let k = 0; k <= 3; k++) {
+                    sum += a[i][k] * b[k][j];
+                }
+                c[i][j] = sum;
+            }
+        }
+
+        return Mat3.from_num_mat(c);
+    }
+
+    mul_v3(v2: Vec3) {
+        let a = this.data;
+        let b = v2.data;
+        let result: Vec3 = new Vec3(0, 0, 0);
+
+        for (let i = 0; i <= 2; i++) {
+            for (let j = 0; j <= 2; j++) {
+                result.data[i] += a[i][j] * b[j];
+            }
+        }
+
+        return Vec3.from_num_arr(result.data);
+    }
+    static t(m: Mat3) {
+        let transpose = new Mat3();
+
+        for (let i = 0; i <= 2; i++) {
+            for (let j = 0; j <= 2; j++) {
+                transpose.data[i][j] = m.data[j][i];
+            }
+        }
+
+        return transpose;
+    }
+
+    static inv(m: Mat3) {
+        let det = m.data[0][0] * (m.data[1][1] * m.data[2][2] - m.data[2][1] * m.data[1][2]) -
+            m.data[0][1] * (m.data[1][0] * m.data[2][2] - m.data[1][2] * m.data[2][0]) +
+            m.data[0][2] * (m.data[1][0] * m.data[2][1] - m.data[1][1] * m.data[2][0]);
+
+        let invdet = 1 / det;
+
+        let minv = new Mat3();
+        minv.data[0][0] = (m.data[1][1] * m.data[2][2] - m.data[2][1] * m.data[1][2]) * invdet;
+        minv.data[0][1] = (m.data[0][2] * m.data[2][1] - m.data[0][1] * m.data[2][2]) * invdet;
+        minv.data[0][2] = (m.data[0][1] * m.data[1][2] - m.data[0][2] * m.data[1][1]) * invdet;
+        minv.data[1][0] = (m.data[1][2] * m.data[2][0] - m.data[1][0] * m.data[2][2]) * invdet;
+        minv.data[1][1] = (m.data[0][0] * m.data[2][2] - m.data[0][2] * m.data[2][0]) * invdet;
+        minv.data[1][2] = (m.data[1][0] * m.data[0][2] - m.data[0][0] * m.data[1][2]) * invdet;
+        minv.data[2][0] = (m.data[1][0] * m.data[2][1] - m.data[2][0] * m.data[1][1]) * invdet;
+        minv.data[2][1] = (m.data[2][0] * m.data[0][1] - m.data[0][0] * m.data[2][1]) * invdet;
+        minv.data[2][2] = (m.data[0][0] * m.data[1][1] - m.data[1][0] * m.data[0][1]) * invdet;
+        return minv;
+    }
+}
+
 class Mat4 {
     data: number[][]
     constructor() {
@@ -195,7 +272,7 @@ class Mat4 {
 
     static from_num_mat(data: number[][]) {
         let result = new Mat4();
-        result.data = data;
+        result.data = JSON.parse(JSON.stringify(data));
 
         return result;
     }
@@ -220,7 +297,7 @@ class Mat4 {
 
     mul_v3(v2: Vec3, fill: number) {
         let a = this.data;
-        let b = v2.data;        
+        let b = v2.data;
         let result: Vec4 = new Vec4(0, 0, 0, 0);
 
         b = b.concat(fill);
@@ -249,8 +326,8 @@ class Mat4 {
     static t(m: Mat4) {
         let transpose = new Mat4();
 
-        for(let i = 0; i <= 3; i++) {
-            for(let j = 0; j <= 3; j++) {
+        for (let i = 0; i <= 3; i++) {
+            for (let j = 0; j <= 3; j++) {
                 transpose.data[i][j] = m.data[j][i];
             }
         }
@@ -283,7 +360,8 @@ class Mat4 {
             - m.data[0][1] * (m.data[1][0] * A2323 - m.data[1][2] * A0323 + m.data[1][3] * A0223)
             + m.data[0][2] * (m.data[1][0] * A1323 - m.data[1][1] * A0323 + m.data[1][3] * A0123)
             - m.data[0][3] * (m.data[1][0] * A1223 - m.data[1][1] * A0223 + m.data[1][2] * A0123);
-        
+
+        if (det == 0) return null;
         det = 1 / det;
 
         let inv_mat = new Mat4();
@@ -304,7 +382,7 @@ class Mat4 {
         inv_mat.data[3][2] = det * - (m.data[0][0] * A1213 - m.data[0][1] * A0213 + m.data[0][2] * A0113);
         inv_mat.data[3][3] = det * (m.data[0][0] * A1212 - m.data[0][1] * A0212 + m.data[0][2] * A0112);
 
-        
+
         return inv_mat;
     }
     static viewport(a: number, b: number, w: number, h: number) {
@@ -340,6 +418,7 @@ class Mat4 {
         }
         return rot.mul(trans);
     }
-
 }
-export { Vec2, Vec3, Vec4, Mat4 };
+
+
+export { Vec2, Vec3, Vec4, Mat3, Mat4 };
