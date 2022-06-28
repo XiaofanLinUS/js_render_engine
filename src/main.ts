@@ -12,8 +12,8 @@ import head_url from './res/head.png'
 import head_nm_url from './res/head_nm_tangent.png'
 
 let canvas: HTMLCanvasElement = document.querySelector("#view");
-canvas.width = 1200;
-canvas.height = 1200
+canvas.width = 800;
+canvas.height = 800
 
 let paper = new Draw(canvas);
 
@@ -62,14 +62,17 @@ let target  = new Vec3(0, 0, 0);
 let up = new Vec3(0, 1, 0);
 let camera = Mat4.lookat(center, target, up);
 
-let light_dir = new Vec3(0, -0.1, 1);
-light_dir = light_dir.normalize();
+    
+let light_pos = new Vec3(1, 1, 1);
+let d_cam = Mat4.lookat(light_pos, target, up);
+let light_dir = light_pos.normalize();
 
 let perspective = new Mat4();
-perspective.data[3][2] = - 1 / 1;
+perspective.data[3][2] = - 1 / 2;
 
 let screen = Mat4.viewport(0, 0, canvas.width, canvas.height);
 let combined = screen.mul(perspective.mul(camera));
+let d_combo = screen.mul(perspective.mul(d_cam));
 
 
 
@@ -89,8 +92,29 @@ function sample_img(img: Img, t_coord: Vec2): Color {
 }
 
 
+class DepthShader extends Shader {
+    p_coord: Vec3[]
+    constructor() {
+        super();
+        this.p_coord = new Array(3);
+    }    
+    override vertex({v,idx}: VertexData): Vec3 {
+        let s = Vec3.proj(d_combo.mul_v3(v, 1).to_p());        
+        this.p_coord[idx] = s;
+
+        return s;
+    }
+
+    override fragment(b: Vec3) {       
+        let final_p_coord = this.p_coord[0].mul(b.x()).add(this.p_coord[1].mul(b.y())).add(this.p_coord[2].mul(b.z()));
+        
+        final_p_coord = final_p_coord.div(255);
+
+        return {r: 255 * final_p_coord.z(), g: 255 * final_p_coord.z(), b: 255 * final_p_coord.z(), a: 255};
+    }
+}
+
 class GouraudShader extends Shader {
-    private intensity: number[]
     private t_coord: Vec2[]
     private p_coord: Vec3[]
     private normal_: Vec3[]
@@ -100,7 +124,6 @@ class GouraudShader extends Shader {
 
     constructor() {
         super();
-        this.intensity = new Array(3).fill(0);
         this.t_coord = new Array(3);
         this.p_coord = new Array(3);
         this.normal_ = new Array(3);
@@ -117,14 +140,12 @@ class GouraudShader extends Shader {
 
         this.normal_[idx] = n;
         this.p_coord[idx] = v;
-        this.intensity[idx] = i;
         this.t_coord[idx] = t;
 
         return Vec3.from_num_arr(s.data);
     }
 
     override fragment(bary: Vec3) {        
-        //let final_intensity = this.intensity[0] * bary.x() + this.intensity[1] * bary.y() + this.intensity[2] * bary.z();
         let final_t_coord   = this.t_coord[0].mul(bary.x()).add(this.t_coord[1].mul(bary.y())).add(this.t_coord[2].mul(bary.z()));
         //let final_p_coord   = this.p_coord[0].mul(bary.x()).add(this.p_coord[1].mul(bary.y())).add(this.p_coord[2].mul(bary.z()));
 
@@ -134,8 +155,6 @@ class GouraudShader extends Shader {
         let p0p1 = this.p_coord[1].sub(this.p_coord[0]);
         let p0p2 = this.p_coord[2].sub(this.p_coord[0]);
 
-        //let A = mat3.transpose(mat3.create(), mat3.fromValues(p0p1.data[0], p0p1.data[1], p0p1.data[2], p0p2.data[0], p0p2.data[1], p0p2.data[2], p2p1.data[0], p2p1.data[1], p2p1.data[2]));
-        
         let A = Mat3.from_num_mat([p0p1.data, p0p2.data, fn.data]);
         let A_ = Mat3.inv(A);
         
@@ -176,11 +195,10 @@ class GouraudShader extends Shader {
     }
 }
 
+let d_shader = new DepthShader();
 let g_shader = new GouraudShader();
 g_shader.M = perspective.mul(camera); 
 g_shader.M_IT = Mat4.t(Mat4.inv(perspective.mul(camera)));
-let z_buff = (new Array(canvas.height * canvas.width)).fill(-Infinity);
-
 
 function step() {
     paper.clear();
@@ -194,12 +212,11 @@ function step() {
             v_data.n = face.get_normal(idx);
             v_data.t = face.get_t_coord(idx);
             v_data.idx = idx;
-            s_coords.push(g_shader.vertex(v_data));
+            s_coords.push(d_shader.vertex(v_data));
         }
-
-        paper.fill_triangle_shader(s_coords, g_shader, z_buff);
+        paper.fill_triangle_shader(s_coords, d_shader);
     }
-    
+
     paper.paint();
 }
 

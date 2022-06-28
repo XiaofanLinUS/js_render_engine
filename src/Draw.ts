@@ -7,12 +7,14 @@ import { Shader } from "./Shader";
 class Draw {
     private ctx;
     private img_data;
+    private z_buff;
     private w: number;
     private h: number;
 
     constructor(private canvas: HTMLCanvasElement) {
         this.ctx = this.canvas.getContext('2d');
         this.img_data = this.ctx.getImageData(0, 0, canvas.width, canvas.height);
+        this.z_buff = (new Array(canvas.height * canvas.width)).fill(-Infinity);
         this.w = canvas.width;
         this.h = canvas.height;
     }
@@ -22,6 +24,7 @@ class Draw {
         this.ctx.fillStyle = 'rgba(0,0,0,255)';
         this.ctx.fillRect(0, 0, this.w, this.h);
         this.img_data = this.ctx.getImageData(0, 0, this.w, this.h);
+        this.z_buff = (new Array(this.w * this.h)).fill(-Infinity);
     };
 
     paint() {
@@ -263,7 +266,7 @@ class Draw {
         }
     }
 
-    fill_triangle_shader([p1, p2, p3]: Vec3[], shader: Shader, z_buff: number[]) {
+    fill_triangle_shader([p1, p2, p3]: Vec3[], shader: Shader) {
         let bbox = find_bbox(Vec2.from_vec3(p1), Vec2.from_vec3(p2), Vec2.from_vec3(p3), this.w, this.h);
         let bb_min = bbox.min;
         let bb_max = bbox.max;
@@ -277,13 +280,10 @@ class Draw {
                 let z = p1.z() * bary.x() + p2.z() * bary.y() + p3.z() * bary.z();
                 let color = shader.fragment(bary);
                 let idx = Math.floor(x) + Math.floor(y) * this.w;
-                if (z > z_buff[idx]) {
-                    z_buff[idx] = z;
-                    //console.log(idx);
+                if (z > this.z_buff[idx]) {
+                    this.z_buff[idx] = z;
                     this.draw_dot(x, y, color);
                 }
-
-
             }
         }
     }
@@ -320,7 +320,6 @@ class Draw {
                 let idx = Math.floor(x) + Math.floor(y) * this.w;
                 if (z > z_buff[idx]) {
                     z_buff[idx] = z;
-                    //console.log(idx);
                     this.draw_dot(x, y, color);
                 }
             }
