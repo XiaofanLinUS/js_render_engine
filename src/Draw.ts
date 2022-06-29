@@ -6,7 +6,7 @@ import { Shader } from "./Shader";
 
 class Draw {
     private ctx;
-    private img_data;
+    public img_data;
     private z_buff;
     private w: number;
     private h: number;
@@ -286,6 +286,35 @@ class Draw {
                 }
             }
         }
+    }
+
+    fill_triangle_shader_([p1, p2, p3]: Vec3[], shader: Shader) {
+        let frame_buffer = new Uint8ClampedArray(this.h * this.w * 4);
+
+        let bbox = find_bbox(Vec2.from_vec3(p1), Vec2.from_vec3(p2), Vec2.from_vec3(p3), this.w, this.h);
+        let bb_min = bbox.min;
+        let bb_max = bbox.max;
+
+        for (let x = Math.floor(bb_min.x()); x <= Math.floor(bb_max.x()); x++) {
+            for (let y = Math.floor(bb_min.y()); y <= Math.floor(bb_max.y()); y++) {
+                let p: Vec3 = new Vec3(x, y, 0);
+                let bary: Vec3 = get_barycentric_v3(p, p1, p2, p3);
+                let outside: boolean = bary.data.some(v => v < 0);
+                if (outside) continue;
+                let z = p1.z() * bary.x() + p2.z() * bary.y() + p3.z() * bary.z();
+                let color = shader.fragment(bary);
+                let idx = Math.floor(x) + Math.floor(y) * this.w;
+                if (z > this.z_buff[idx]) {
+                    this.z_buff[idx] = z;
+                    let id = idx * 4;
+                    frame_buffer[id] = color.r;                    
+                    frame_buffer[id+1] = color.g;
+                    frame_buffer[id+2] = color.b;
+                    frame_buffer[id+3] = color.a;
+                }
+            }
+        }
+        return frame_buffer;
     }
 
     draw_line4_v(p0: Vec2, p1: Vec2, color: Color) {
